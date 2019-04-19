@@ -39,5 +39,12 @@ namespace Green.Tests
             var result = _interpreter.EvalToken("-12");
             Assert.Equal(-12L, result);
         }
+
+        [Fact]
+        public void EvalToken_Identifier()
+        {
+            var result = _interpreter.EvalToken("abc");
+            Assert.Equal(Interpreter.ToIdentifier("abc"), result);
+        }
     }
 }

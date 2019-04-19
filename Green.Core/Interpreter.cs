@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Green
 {
@@ -30,7 +31,12 @@ namespace Green
         {
             if (Int64.TryParse(lexeme, out var result))
                 return result;
-            return null;
+            return new Identifier(lexeme);
+        }
+
+        public static Identifier ToIdentifier(string name)
+        {
+            return new Identifier(name);
         }
     }
 }
