@@ -49,5 +49,19 @@ namespace Green.Tests
             Assert.Equal(TokenType.Identifier, type);
             Assert.Equal(Interpreter.ToIdentifier("abc"), result);
         }
+
+        [Fact]
+        public void EvalToken_LeftBracket()
+        {
+            var (type, _) = _interpreter.EvalToken("(");
+            Assert.Equal(TokenType.LeftBracket, type);
+        }
+
+        [Fact]
+        public void EvalToken_RightBracket()
+        {
+            var (type, _) = _interpreter.EvalToken(")");
+            Assert.Equal(TokenType.RightBracket, type);
+        }
     }
 }

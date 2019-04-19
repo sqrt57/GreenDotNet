@@ -29,6 +29,10 @@ namespace Green
 
         public (TokenType, object) EvalToken(string lexeme)
         {
+            if (lexeme == "(")
+                return (TokenType.LeftBracket, default);
+            if (lexeme == ")")
+                return (TokenType.RightBracket, default);
             if (Int64.TryParse(lexeme, out var number))
                 return (TokenType.Number, number);
             return (TokenType.Identifier, new Identifier(lexeme));
