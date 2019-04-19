@@ -51,6 +51,14 @@ namespace Green.Tests
         }
 
         [Fact]
+        public void EvalToken_Plus_Identifier()
+        {
+            var (type, result) = _interpreter.EvalToken("+");
+            Assert.Equal(TokenType.Identifier, type);
+            Assert.Equal(Interpreter.ToIdentifier("+"), result);
+        }
+
+        [Fact]
         public void EvalToken_LeftBracket()
         {
             var (type, _) = _interpreter.EvalToken("(");

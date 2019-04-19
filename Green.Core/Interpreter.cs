@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace Green
 {
@@ -7,7 +10,7 @@ namespace Green
     {
         public object Eval(string source)
         {
-            var lexemes = Scan(source);
+            var lexemes = Scan(source).ToArray();
             if (lexemes.Length == 5
                 && lexemes[0] == "("
                 && lexemes[1] == "+"
@@ -20,11 +23,51 @@ namespace Green
             return null;
         }
 
-        public string[] Scan(string source)
+        public IEnumerable<string> Scan(string source)
         {
-            if (source == "(+ 2 3)")
-                return new[] { "(", "+", "2", "3", ")" };
-            return null;
+            bool inAtom = false;
+            var atom = new StringBuilder();
+            foreach (char c in source)
+            {
+                if (inAtom)
+                {
+                    if (Char.IsWhiteSpace(c))
+                    {
+                        yield return atom.ToString();
+                        inAtom = false;
+                    }
+                    else if (c == '(')
+                    {
+                        yield return atom.ToString();
+                        inAtom = false;
+                        yield return "(";
+                    }
+                    else if (c == ')')
+                    {
+                        yield return atom.ToString();
+                        inAtom = false;
+                        yield return ")";
+                    }
+                    else
+                        atom.Append(c);
+                }
+                else
+                {
+                    if (!Char.IsWhiteSpace(c))
+                    {
+                        if (c == '(')
+                            yield return "(";
+                        else if (c == ')')
+                            yield return ")";
+                        else
+                        {
+                            inAtom = true;
+                            atom.Clear();
+                            atom.Append(c);
+                        }
+                    }
+                }
+            }
         }
 
         public (TokenType, object) EvalToken(string lexeme)
