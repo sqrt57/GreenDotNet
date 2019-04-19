@@ -10,13 +10,16 @@ namespace Green
     {
         public object Eval(string source)
         {
-            var lexemes = Scan(source).ToArray();
-            if (lexemes.Length == 5
-                && lexemes[0] == "("
-                && lexemes[1] == "+"
-                && lexemes[2] == "2"
-                && lexemes[3] == "3"
-                && lexemes[4] == ")")
+            var tokens = Scan(source).Select(EvalToken).ToArray();
+            if (tokens.Length == 5
+                && tokens[0].type == TokenType.LeftBracket
+                && tokens[1].type == TokenType.Identifier
+                && tokens[1].value.Equals(ToIdentifier("+"))
+                && tokens[2].type == TokenType.Number
+                && tokens[2].value.Equals(2L)
+                && tokens[3].type == TokenType.Number
+                && tokens[3].value.Equals(3L)
+                && tokens[4].type == TokenType.RightBracket)
             {
                 return 5;
             }
@@ -70,7 +73,7 @@ namespace Green
             }
         }
 
-        public (TokenType, object) EvalToken(string lexeme)
+        public (TokenType type, object value) EvalToken(string lexeme)
         {
             if (lexeme == "(")
                 return (TokenType.LeftBracket, default);
