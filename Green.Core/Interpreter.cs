@@ -27,11 +27,11 @@ namespace Green
             return null;
         }
 
-        public object EvalToken(string lexeme)
+        public (TokenType, object) EvalToken(string lexeme)
         {
-            if (Int64.TryParse(lexeme, out var result))
-                return result;
-            return new Identifier(lexeme);
+            if (Int64.TryParse(lexeme, out var number))
+                return (TokenType.Number, number);
+            return (TokenType.Identifier, new Identifier(lexeme));
         }
 
         public static Identifier ToIdentifier(string name)

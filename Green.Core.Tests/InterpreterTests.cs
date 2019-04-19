@@ -29,21 +29,24 @@ namespace Green.Tests
         [Fact]
         public void EvalToken_Number()
         {
-            var result = _interpreter.EvalToken("12");
+            var (type, result) = _interpreter.EvalToken("12");
+            Assert.Equal(TokenType.Number, type);
             Assert.Equal(12L, result);
         }
 
         [Fact]
         public void EvalToken_NegativeNumber()
         {
-            var result = _interpreter.EvalToken("-12");
+            var (type, result) = _interpreter.EvalToken("-12");
+            Assert.Equal(TokenType.Number, type);
             Assert.Equal(-12L, result);
         }
 
         [Fact]
         public void EvalToken_Identifier()
         {
-            var result = _interpreter.EvalToken("abc");
+            var (type, result) = _interpreter.EvalToken("abc");
+            Assert.Equal(TokenType.Identifier, type);
             Assert.Equal(Interpreter.ToIdentifier("abc"), result);
         }
     }
