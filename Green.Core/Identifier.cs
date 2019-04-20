@@ -2,7 +2,7 @@
 {
     public readonly struct Identifier
     {
-        private readonly string Name;
+        public readonly string Name;
 
         public Identifier(string name)
         {

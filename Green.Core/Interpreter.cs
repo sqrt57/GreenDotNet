@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 
@@ -7,22 +8,73 @@ namespace Green
 {
     public sealed class Interpreter
     {
-        public object Eval(string source)
+        public object EvalSource(string source)
         {
-            var tokens = Scan(source).Select(EvalToken).ToArray();
-            if (tokens.Length == 5
-                && tokens[0].type == TokenType.LeftBracket
-                && tokens[1].type == TokenType.Identifier
-                && tokens[1].value.Equals(ToIdentifier("+"))
-                && tokens[2].type == TokenType.Number
-                && tokens[2].value.Equals(2L)
-                && tokens[3].type == TokenType.Number
-                && tokens[3].value.Equals(3L)
-                && tokens[4].type == TokenType.RightBracket)
+            object result = null;
+            foreach (var expr in Read(source))
+                result = Eval(expr);
+            return result;
+        }
+
+        private object Eval(object expr)
+        {
+            switch (expr)
             {
-                return 5;
+                case Int64 intValue:
+                    return intValue;
+                case IEnumerable<object> list:
+                    var fun = list.FirstOrDefault();
+                    if (fun == null)
+                        throw new SyntaxException("eval: empty application: ()");
+                    var evalFun = GetFunction(fun);
+                    var args = list.Skip(1).Select(Eval).ToArray();
+                    return evalFun(args);
+                default:
+                    throw new RuntimeException($"eval: cannot evaluate {expr}");
             }
-            return null;
+        }
+
+        private GreenFunction GetFunction(object fun)
+        {
+            if (fun is Identifier id)
+            {
+                switch (id.Name)
+                {
+                    case "+": return Add;
+                    default:
+                        throw new RuntimeException($"Unknow function {id.Name}");
+                }
+            }
+            else
+                throw new RuntimeException($"Cannot use {fun} as a function");
+        }
+
+        public delegate object GreenFunction(object[] args);
+
+        public object Add(object[] args)
+        {
+            Int64 result = 0;
+            foreach (var arg in args)
+            {
+                switch (arg)
+                {
+                    case Int64 intValue:
+                        result += intValue;
+                        break;
+                    case UInt64 intValue:
+                        result += (Int64) intValue;
+                        break;
+                    case Int32 intValue:
+                        result += intValue;
+                        break;
+                    case UInt32 intValue:
+                        result += intValue;
+                        break;
+                    default:
+                        throw new RuntimeException($"+: bad argument {arg}");
+                }
+            }
+            return result;
         }
 
         public IEnumerable<object> Read(string source)
@@ -39,7 +91,7 @@ namespace Green
                 switch (type)
                 {
                     case TokenType.LeftBracket:
-                        var sublist = ReadList(enumerator, true);
+                        var sublist = new ReadOnlyCollection<object>(ReadList(enumerator, true).ToArray());
                         yield return sublist;
                         break;
                     case TokenType.RightBracket:
