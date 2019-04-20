@@ -20,6 +20,34 @@ namespace Green.Tests
         }
 
         [Fact]
+        public void Read_Empty()
+        {
+            var result = _interpreter.Read("");
+            Assert.Equal(new object[] { }, result);
+        }
+
+        [Fact]
+        public void Read_Number()
+        {
+            var result = _interpreter.Read("5");
+            Assert.Equal(new object[] { 5L }, result);
+        }
+
+        [Fact]
+        public void Read_EmptyList()
+        {
+            var result = _interpreter.Read("()");
+            Assert.Equal(new[] { new object[] { } }, result);
+        }
+
+        [Fact]
+        public void Read_List()
+        {
+            var result = _interpreter.Read("(+ 2 3)");
+            Assert.Equal(new[] { new object[] { _interpreter.ToIdentifier("+"), 2L, 3L } }, result);
+        }
+
+        [Fact]
         public void Scan_Empty()
         {
             var result = _interpreter.Scan("");

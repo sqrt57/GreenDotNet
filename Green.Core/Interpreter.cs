@@ -25,6 +25,36 @@ namespace Green
             return null;
         }
 
+        public IEnumerable<object> Read(string source)
+        {
+            var enumerator = Scan(source).Select(EvalToken).GetEnumerator();
+            return ReadList(enumerator, innerList: false);
+        }
+
+        private IEnumerable<object> ReadList(IEnumerator<(TokenType type, object value)> enumerator, bool innerList)
+        {
+            while (enumerator.MoveNext())
+            {
+                var (type, value) = enumerator.Current;
+                switch (type)
+                {
+                    case TokenType.LeftBracket:
+                        var sublist = ReadList(enumerator, true);
+                        yield return sublist;
+                        break;
+                    case TokenType.RightBracket:
+                        if (innerList)
+                            yield break;
+                        else
+                            throw new Exception("");
+                    case TokenType.Number:
+                    case TokenType.Identifier:
+                        yield return value;
+                        break;
+                }
+            }
+        }
+
         public IEnumerable<string> Scan(string source)
         {
             bool inAtom = false;
