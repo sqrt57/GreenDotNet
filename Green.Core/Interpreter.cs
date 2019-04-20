@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -84,7 +83,7 @@ namespace Green
             return (TokenType.Identifier, new Identifier(lexeme));
         }
 
-        public static Identifier ToIdentifier(string name)
+        public Identifier ToIdentifier(string name)
         {
             return new Identifier(name);
         }

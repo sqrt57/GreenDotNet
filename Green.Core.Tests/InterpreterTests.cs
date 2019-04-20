@@ -47,7 +47,7 @@ namespace Green.Tests
         {
             var (type, result) = _interpreter.EvalToken("abc");
             Assert.Equal(TokenType.Identifier, type);
-            Assert.Equal(Interpreter.ToIdentifier("abc"), result);
+            Assert.Equal(_interpreter.ToIdentifier("abc"), result);
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace Green.Tests
         {
             var (type, result) = _interpreter.EvalToken("+");
             Assert.Equal(TokenType.Identifier, type);
-            Assert.Equal(Interpreter.ToIdentifier("+"), result);
+            Assert.Equal(_interpreter.ToIdentifier("+"), result);
         }
 
         [Fact]
