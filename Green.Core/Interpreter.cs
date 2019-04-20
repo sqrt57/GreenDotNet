@@ -46,7 +46,7 @@ namespace Green
                         if (innerList)
                             yield break;
                         else
-                            throw new Exception("");
+                            throw new ReaderException("read: unexpected right bracket");
                     case TokenType.Number:
                     case TokenType.Identifier:
                         yield return value;
