@@ -20,7 +20,35 @@ namespace Green.Tests
         }
 
         [Fact]
-        public void Scan_Add()
+        public void Scan_Empty()
+        {
+            var result = _interpreter.Scan("");
+            Assert.Equal(new string[] { }, result);
+        }
+
+        [Fact]
+        public void Scan_Whitespace()
+        {
+            var result = _interpreter.Scan(" ");
+            Assert.Equal(new string[] { }, result);
+        }
+
+        [Fact]
+        public void Scan_Number()
+        {
+            var result = _interpreter.Scan("3");
+            Assert.Equal(new[] { "3" }, result);
+        }
+
+        [Fact]
+        public void Scan_Identifier()
+        {
+            var result = _interpreter.Scan("abc");
+            Assert.Equal(new[] { "abc" }, result);
+        }
+
+        [Fact]
+        public void Scan_List()
         {
             var result = _interpreter.Scan("(+ 2 3)");
             Assert.Equal(new[] { "(", "+", "2", "3", ")" }, result);

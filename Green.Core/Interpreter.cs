@@ -70,6 +70,8 @@ namespace Green
                     }
                 }
             }
+            if (inAtom)
+                yield return atom.ToString();
         }
 
         public (TokenType type, object value) EvalToken(string lexeme)
