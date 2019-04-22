@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System.Linq;
+using Xunit;
 
 namespace Green.Tests
 {
@@ -37,36 +38,78 @@ namespace Green.Tests
         [Fact]
         public void Scan_Empty()
         {
-            var result = _reader.Scan("");
-            Assert.Equal(new string[] { }, result);
+            var result = _reader.Scan("").ToArray();
+            Assert.Empty(result);
         }
 
         [Fact]
         public void Scan_Whitespace()
         {
-            var result = _reader.Scan(" ");
-            Assert.Equal(new string[] { }, result);
+            var result = _reader.Scan(" ").ToArray();
+            Assert.Empty(result);
         }
 
         [Fact]
         public void Scan_Number()
         {
-            var result = _reader.Scan("3");
-            Assert.Equal(new[] { "3" }, result);
+            var result = _reader.Scan("15").ToArray();
+            Assert.Single(result);
+            Assert.Equal("15", result[0].lexeme);
+            Assert.Equal(SourceType.String, result[0].syntaxInfo.Source.Type);
+            Assert.Null(result[0].syntaxInfo.Source.FileName);
+            Assert.Equal(0, result[0].syntaxInfo.Position);
+            Assert.Equal(0, result[0].syntaxInfo.LineNumber);
+            Assert.Equal(0, result[0].syntaxInfo.ColumnNumber);
+            Assert.Equal(2, result[0].syntaxInfo.Span);
         }
 
         [Fact]
         public void Scan_Identifier()
         {
-            var result = _reader.Scan("abc");
-            Assert.Equal(new[] { "abc" }, result);
+            var result = _reader.Scan("abc").ToArray();
+            Assert.Single(result);
+            Assert.Equal("abc", result[0].lexeme);
+            Assert.Equal(0, result[0].syntaxInfo.Position);
+            Assert.Equal(0, result[0].syntaxInfo.LineNumber);
+            Assert.Equal(0, result[0].syntaxInfo.ColumnNumber);
+            Assert.Equal(3, result[0].syntaxInfo.Span);
         }
 
         [Fact]
         public void Scan_List()
         {
-            var result = _reader.Scan("(+ 2 3)");
-            Assert.Equal(new[] { "(", "+", "2", "3", ")" }, result);
+            var result = _reader.Scan("(+ 2\n30)").ToArray();
+            Assert.Equal(5, result.Length);
+
+            Assert.Equal("(", result[0].lexeme);
+            Assert.Equal(0, result[0].syntaxInfo.Position);
+            Assert.Equal(0, result[0].syntaxInfo.LineNumber);
+            Assert.Equal(0, result[0].syntaxInfo.ColumnNumber);
+            Assert.Equal(1, result[0].syntaxInfo.Span);
+
+            Assert.Equal("+", result[1].lexeme);
+            Assert.Equal(1, result[1].syntaxInfo.Position);
+            Assert.Equal(0, result[1].syntaxInfo.LineNumber);
+            Assert.Equal(1, result[1].syntaxInfo.ColumnNumber);
+            Assert.Equal(1, result[1].syntaxInfo.Span);
+
+            Assert.Equal("2", result[2].lexeme);
+            Assert.Equal(3, result[2].syntaxInfo.Position);
+            Assert.Equal(0, result[2].syntaxInfo.LineNumber);
+            Assert.Equal(3, result[2].syntaxInfo.ColumnNumber);
+            Assert.Equal(1, result[2].syntaxInfo.Span);
+
+            Assert.Equal("30", result[3].lexeme);
+            Assert.Equal(5, result[3].syntaxInfo.Position);
+            Assert.Equal(1, result[3].syntaxInfo.LineNumber);
+            Assert.Equal(0, result[3].syntaxInfo.ColumnNumber);
+            Assert.Equal(2, result[3].syntaxInfo.Span);
+
+            Assert.Equal(")", result[4].lexeme);
+            Assert.Equal(7, result[4].syntaxInfo.Position);
+            Assert.Equal(1, result[4].syntaxInfo.LineNumber);
+            Assert.Equal(2, result[4].syntaxInfo.ColumnNumber);
+            Assert.Equal(1, result[4].syntaxInfo.Span);
         }
 
         [Fact]

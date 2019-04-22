@@ -10,7 +10,7 @@ namespace Green
     {
         public IEnumerable<object> Read(string source)
         {
-            var enumerator = Scan(source).Select(EvalToken).GetEnumerator();
+            var enumerator = Scan(source).Select(((string x, SyntaxInfo _) t) => EvalToken(t.x)).GetEnumerator();
             return ReadList(enumerator, innerList: false);
         }
 
@@ -38,30 +38,37 @@ namespace Green
             }
         }
 
-        public IEnumerable<string> Scan(string source)
+        public IEnumerable<(string lexeme, SyntaxInfo syntaxInfo)> Scan(string source)
         {
+            var sourceInfo = new SourceInfo(SourceType.String, null);
             bool inAtom = false;
             var atom = new StringBuilder();
+            int position = 0, line = 0, column = 0;
+            int atomPosition = 0, atomLine = 0, atomColumn = 0;
+
             foreach (char c in source)
             {
                 if (inAtom)
                 {
                     if (Char.IsWhiteSpace(c))
                     {
-                        yield return atom.ToString();
+                        yield return (atom.ToString(),
+                            new SyntaxInfo(sourceInfo, atomPosition, position - atomPosition, atomLine, atomColumn));
                         inAtom = false;
                     }
                     else if (c == '(')
                     {
-                        yield return atom.ToString();
+                        yield return (atom.ToString(),
+                            new SyntaxInfo(sourceInfo, atomPosition, position - atomPosition, atomLine, atomColumn));
                         inAtom = false;
-                        yield return "(";
+                        yield return ("(", new SyntaxInfo(sourceInfo, position, 1, line, column));
                     }
                     else if (c == ')')
                     {
-                        yield return atom.ToString();
+                        yield return (atom.ToString(),
+                            new SyntaxInfo(sourceInfo, atomPosition, position - atomPosition, atomLine, atomColumn));
                         inAtom = false;
-                        yield return ")";
+                        yield return (")", new SyntaxInfo(sourceInfo, position, 1, line, column));
                     }
                     else
                         atom.Append(c);
@@ -71,20 +78,35 @@ namespace Green
                     if (!Char.IsWhiteSpace(c))
                     {
                         if (c == '(')
-                            yield return "(";
+                            yield return ("(", new SyntaxInfo(sourceInfo, position, 1, line, column));
                         else if (c == ')')
-                            yield return ")";
+                            yield return (")", new SyntaxInfo(sourceInfo, position, 1, line, column));
                         else
                         {
                             inAtom = true;
+                            atomPosition = position;
+                            atomLine = line;
+                            atomColumn = column;
                             atom.Clear();
                             atom.Append(c);
                         }
                     }
                 }
+                position++;
+                if (c == '\n')
+                {
+                    line++;
+                    column = 0;
+                }
+                else
+                    column++;
             }
+
             if (inAtom)
-                yield return atom.ToString();
+            {
+                yield return (atom.ToString(),
+                    new SyntaxInfo(sourceInfo, atomPosition, position - atomPosition, atomLine, atomColumn));
+            }
         }
 
         public (TokenType type, object value) EvalToken(string lexeme)
