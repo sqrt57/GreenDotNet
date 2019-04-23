@@ -21,27 +21,29 @@ namespace Green
             return result;
         }
 
-        private object Eval(object expr)
+        private object Eval(ISyntax expr)
         {
             switch (expr)
             {
-                case Int64 intValue:
-                    return intValue;
-                case IEnumerable<object> list:
-                    var fun = list.FirstOrDefault();
-                    if (fun == null)
+                case SyntaxConstant constant:
+                    return constant.Value;
+                case SyntaxList list:
+                    if (list.Items.Count == 0)
                         throw new SyntaxException("eval: empty application: ()");
+                    var fun = list.Items[0];
                     var evalFun = GetFunction(fun);
-                    var args = list.Skip(1).Select(Eval).ToArray();
+                    var args = list.Items.Skip(1).Select(Eval).ToArray();
                     return evalFun(args);
+                case SyntaxIdentifier identifier:
+                    throw new NotImplementedException("eval: variables are not implemented");
                 default:
                     throw new RuntimeException($"eval: cannot evaluate {expr}");
             }
         }
 
-        private GreenFunction GetFunction(object fun)
+        private GreenFunction GetFunction(ISyntax fun)
         {
-            if (fun is Identifier id)
+            if (fun is SyntaxIdentifier id)
             {
                 switch (id.Name)
                 {

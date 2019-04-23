@@ -10,29 +10,49 @@ namespace Green.Tests
         [Fact]
         public void Read_Empty()
         {
-            var result = _reader.Read("");
-            Assert.Equal(new object[] { }, result);
+            var result = _reader.Read("").ToArray();
+            Assert.Empty(result);
         }
 
         [Fact]
         public void Read_Number()
         {
-            var result = _reader.Read("5");
-            Assert.Equal(new object[] { 5L }, result);
+            var result = _reader.Read("5").ToArray();
+            Assert.Single(result);
+            Assert.Equal(SourceType.String, result[0].SyntaxInfo.Source.Type);
+            Assert.Null(result[0].SyntaxInfo.Source.FileName);
+            Assert.Equal(0, result[0].SyntaxInfo.Position);
+            Assert.Equal(0, result[0].SyntaxInfo.LineNumber);
+            Assert.Equal(0, result[0].SyntaxInfo.ColumnNumber);
+            Assert.Equal(1, result[0].SyntaxInfo.Span);
+            Assert.IsType<SyntaxConstant>(result[0]);
+            Assert.Equal(5L, ((SyntaxConstant)result[0]).Value);
         }
 
         [Fact]
         public void Read_EmptyList()
         {
-            var result = _reader.Read("()");
-            Assert.Equal(new[] { new object[] { } }, result);
+            var result = _reader.Read("()").ToArray();
+            Assert.Single(result);
+            Assert.IsType<SyntaxList>(result[0]);
+            Assert.Empty(((SyntaxList)result[0]).Items);
         }
 
         [Fact]
         public void Read_List()
         {
-            var result = _reader.Read("(+ 2 3)");
-            Assert.Equal(new[] { new object[] { _reader.ToIdentifier("+"), 2L, 3L } }, result);
+            var result = _reader.Read("(+ 2 3)").ToArray();
+            Assert.Single(result);
+            Assert.IsType<SyntaxList>(result[0]);
+            var subList = (SyntaxList)result[0];
+            Assert.Equal(3, subList.Items.Count);
+            Assert.IsType<SyntaxIdentifier>(subList.Items[0]);
+            Assert.Equal(IdentifierType.Identifier, ((SyntaxIdentifier)subList.Items[0]).Type);
+            Assert.Equal("+", ((SyntaxIdentifier)subList.Items[0]).Name);
+            Assert.IsType<SyntaxConstant>(subList.Items[1]);
+            Assert.Equal(2L, ((SyntaxConstant)subList.Items[1]).Value);
+            Assert.IsType<SyntaxConstant>(subList.Items[2]);
+            Assert.Equal(3L, ((SyntaxConstant)subList.Items[2]).Value);
         }
 
         [Fact]
@@ -115,46 +135,46 @@ namespace Green.Tests
         [Fact]
         public void EvalToken_Number()
         {
-            var (type, result) = _reader.EvalToken("12");
+            var (type, value, name) = _reader.EvalToken("12");
             Assert.Equal(TokenType.Number, type);
-            Assert.Equal(12L, result);
+            Assert.Equal(12L, value);
         }
 
         [Fact]
         public void EvalToken_NegativeNumber()
         {
-            var (type, result) = _reader.EvalToken("-12");
+            var (type, value, name) = _reader.EvalToken("-12");
             Assert.Equal(TokenType.Number, type);
-            Assert.Equal(-12L, result);
+            Assert.Equal(-12L, value);
         }
 
         [Fact]
         public void EvalToken_Identifier()
         {
-            var (type, result) = _reader.EvalToken("abc");
+            var (type, value, name) = _reader.EvalToken("abc");
             Assert.Equal(TokenType.Identifier, type);
-            Assert.Equal(_reader.ToIdentifier("abc"), result);
+            Assert.Equal("abc", name);
         }
 
         [Fact]
         public void EvalToken_Plus_Identifier()
         {
-            var (type, result) = _reader.EvalToken("+");
+            var (type, value, name) = _reader.EvalToken("+");
             Assert.Equal(TokenType.Identifier, type);
-            Assert.Equal(_reader.ToIdentifier("+"), result);
+            Assert.Equal("+", name);
         }
 
         [Fact]
         public void EvalToken_LeftBracket()
         {
-            var (type, _) = _reader.EvalToken("(");
+            var (type, value, name) = _reader.EvalToken("(");
             Assert.Equal(TokenType.LeftBracket, type);
         }
 
         [Fact]
         public void EvalToken_RightBracket()
         {
-            var (type, _) = _reader.EvalToken(")");
+            var (type, value, name) = _reader.EvalToken(")");
             Assert.Equal(TokenType.RightBracket, type);
         }
     }

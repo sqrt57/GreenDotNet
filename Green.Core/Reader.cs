@@ -8,22 +8,37 @@ namespace Green
 {
     public class Reader
     {
-        public IEnumerable<object> Read(string source)
+        public IEnumerable<ISyntax> Read(string source)
         {
-            var enumerator = Scan(source).Select(((string x, SyntaxInfo _) t) => EvalToken(t.x)).GetEnumerator();
+            var enumerator = Scan(source)
+                .Select(t =>
+                {
+                    var (lexeme, syntaxInfo) = t;
+                    var (type, value, name) = EvalToken(lexeme);
+                    return (type, value, name, syntaxInfo);
+                })
+                .GetEnumerator();
             return ReadList(enumerator, innerList: false);
         }
 
-        private IEnumerable<object> ReadList(IEnumerator<(TokenType type, object value)> enumerator, bool innerList)
+        private IEnumerable<ISyntax> ReadList(
+            IEnumerator<(TokenType type, object value, string name, SyntaxInfo syntaxInfo)> enumerator,
+            bool innerList)
         {
             while (enumerator.MoveNext())
             {
-                var (type, value) = enumerator.Current;
+                var (type, value, name, syntaxInfo) = enumerator.Current;
                 switch (type)
                 {
                     case TokenType.LeftBracket:
-                        var sublist = new ReadOnlyCollection<object>(ReadList(enumerator, true).ToArray());
-                        yield return sublist;
+                        var sublist = new ReadOnlyCollection<ISyntax>(ReadList(enumerator, true).ToArray());
+                        var listSyntaxInfo = new SyntaxInfo(
+                            syntaxInfo.Source,
+                            syntaxInfo.Position,
+                            syntaxInfo.Span,
+                            syntaxInfo.LineNumber,
+                            syntaxInfo.ColumnNumber);
+                        yield return new SyntaxList(listSyntaxInfo, sublist);
                         break;
                     case TokenType.RightBracket:
                         if (innerList)
@@ -31,8 +46,10 @@ namespace Green
                         else
                             throw new ReaderException("read: unexpected right bracket");
                     case TokenType.Number:
+                        yield return new SyntaxConstant(syntaxInfo, value);
+                        break;
                     case TokenType.Identifier:
-                        yield return value;
+                        yield return new SyntaxIdentifier(syntaxInfo, IdentifierType.Identifier, name);
                         break;
                 }
             }
@@ -109,20 +126,15 @@ namespace Green
             }
         }
 
-        public (TokenType type, object value) EvalToken(string lexeme)
+        public (TokenType type, object value, string name) EvalToken(string lexeme)
         {
             if (lexeme == "(")
-                return (TokenType.LeftBracket, default);
+                return (TokenType.LeftBracket, default, default);
             if (lexeme == ")")
-                return (TokenType.RightBracket, default);
+                return (TokenType.RightBracket, default, default);
             if (Int64.TryParse(lexeme, out var number))
-                return (TokenType.Number, number);
-            return (TokenType.Identifier, new Identifier(lexeme));
-        }
-
-        public Identifier ToIdentifier(string name)
-        {
-            return new Identifier(name);
+                return (TokenType.Number, number, default);
+            return (TokenType.Identifier, default, lexeme);
         }
     }
 }
