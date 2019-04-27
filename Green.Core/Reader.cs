@@ -32,12 +32,7 @@ namespace Green
                 {
                     case TokenType.LeftBracket:
                         var sublist = new ReadOnlyCollection<ISyntax>(ReadList(enumerator, true).ToArray());
-                        var listSyntaxInfo = new SyntaxInfo(
-                            syntaxInfo.Source,
-                            syntaxInfo.Position,
-                            syntaxInfo.Span,
-                            syntaxInfo.LineNumber,
-                            syntaxInfo.ColumnNumber);
+                        var listSyntaxInfo = syntaxInfo;
                         yield return new SyntaxList(listSyntaxInfo, sublist);
                         break;
                     case TokenType.RightBracket:
@@ -60,32 +55,34 @@ namespace Green
             var sourceInfo = new SourceInfo(SourceType.String, null);
             bool inAtom = false;
             var atom = new StringBuilder();
-            int position = 0, line = 0, column = 0;
-            int atomPosition = 0, atomLine = 0, atomColumn = 0;
+            var positionBuilder = new SourcePositionBuilder();
+            SourcePosition atomPosition = positionBuilder.Current;
 
             foreach (char c in source)
             {
+                var position = positionBuilder.Current;
+                positionBuilder.Update(c);
                 if (inAtom)
                 {
                     if (Char.IsWhiteSpace(c))
                     {
                         yield return (atom.ToString(),
-                            new SyntaxInfo(sourceInfo, atomPosition, position - atomPosition, atomLine, atomColumn));
+                            SyntaxInfo.FromBeginEnd(sourceInfo, atomPosition, position));
                         inAtom = false;
                     }
                     else if (c == '(')
                     {
                         yield return (atom.ToString(),
-                            new SyntaxInfo(sourceInfo, atomPosition, position - atomPosition, atomLine, atomColumn));
+                            SyntaxInfo.FromBeginEnd(sourceInfo, atomPosition, position));
                         inAtom = false;
-                        yield return ("(", new SyntaxInfo(sourceInfo, position, 1, line, column));
+                        yield return ("(", SyntaxInfo.FromBeginSpan(sourceInfo, position, 1));
                     }
                     else if (c == ')')
                     {
                         yield return (atom.ToString(),
-                            new SyntaxInfo(sourceInfo, atomPosition, position - atomPosition, atomLine, atomColumn));
+                            SyntaxInfo.FromBeginEnd(sourceInfo, atomPosition, position));
                         inAtom = false;
-                        yield return (")", new SyntaxInfo(sourceInfo, position, 1, line, column));
+                        yield return (")", SyntaxInfo.FromBeginSpan(sourceInfo, position, 1));
                     }
                     else
                         atom.Append(c);
@@ -95,34 +92,23 @@ namespace Green
                     if (!Char.IsWhiteSpace(c))
                     {
                         if (c == '(')
-                            yield return ("(", new SyntaxInfo(sourceInfo, position, 1, line, column));
+                            yield return ("(", SyntaxInfo.FromBeginSpan(sourceInfo, position, 1));
                         else if (c == ')')
-                            yield return (")", new SyntaxInfo(sourceInfo, position, 1, line, column));
+                            yield return (")", SyntaxInfo.FromBeginSpan(sourceInfo, position, 1));
                         else
                         {
                             inAtom = true;
                             atomPosition = position;
-                            atomLine = line;
-                            atomColumn = column;
                             atom.Clear();
                             atom.Append(c);
                         }
                     }
                 }
-                position++;
-                if (c == '\n')
-                {
-                    line++;
-                    column = 0;
-                }
-                else
-                    column++;
             }
 
             if (inAtom)
             {
-                yield return (atom.ToString(),
-                    new SyntaxInfo(sourceInfo, atomPosition, position - atomPosition, atomLine, atomColumn));
+                yield return (atom.ToString(), SyntaxInfo.FromBeginEnd(sourceInfo, atomPosition, positionBuilder.Current));
             }
         }
 

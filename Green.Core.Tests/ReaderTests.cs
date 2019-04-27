@@ -21,9 +21,7 @@ namespace Green.Tests
             Assert.Single(result);
             Assert.Equal(SourceType.String, result[0].SyntaxInfo.Source.Type);
             Assert.Null(result[0].SyntaxInfo.Source.FileName);
-            Assert.Equal(0, result[0].SyntaxInfo.Position);
-            Assert.Equal(0, result[0].SyntaxInfo.LineNumber);
-            Assert.Equal(0, result[0].SyntaxInfo.ColumnNumber);
+            Assert.Equal(new SourcePosition(0, 0, 0), result[0].SyntaxInfo.Position);
             Assert.Equal(1, result[0].SyntaxInfo.Span);
             Assert.IsType<SyntaxConstant>(result[0]);
             Assert.Equal(5L, ((SyntaxConstant)result[0]).Value);
@@ -77,9 +75,7 @@ namespace Green.Tests
             Assert.Equal("15", result[0].lexeme);
             Assert.Equal(SourceType.String, result[0].syntaxInfo.Source.Type);
             Assert.Null(result[0].syntaxInfo.Source.FileName);
-            Assert.Equal(0, result[0].syntaxInfo.Position);
-            Assert.Equal(0, result[0].syntaxInfo.LineNumber);
-            Assert.Equal(0, result[0].syntaxInfo.ColumnNumber);
+            Assert.Equal(new SourcePosition(0, 0, 0), result[0].syntaxInfo.Position);
             Assert.Equal(2, result[0].syntaxInfo.Span);
         }
 
@@ -89,9 +85,7 @@ namespace Green.Tests
             var result = _reader.Scan("abc").ToArray();
             Assert.Single(result);
             Assert.Equal("abc", result[0].lexeme);
-            Assert.Equal(0, result[0].syntaxInfo.Position);
-            Assert.Equal(0, result[0].syntaxInfo.LineNumber);
-            Assert.Equal(0, result[0].syntaxInfo.ColumnNumber);
+            Assert.Equal(new SourcePosition(0, 0, 0), result[0].syntaxInfo.Position);
             Assert.Equal(3, result[0].syntaxInfo.Span);
         }
 
@@ -102,33 +96,23 @@ namespace Green.Tests
             Assert.Equal(5, result.Length);
 
             Assert.Equal("(", result[0].lexeme);
-            Assert.Equal(0, result[0].syntaxInfo.Position);
-            Assert.Equal(0, result[0].syntaxInfo.LineNumber);
-            Assert.Equal(0, result[0].syntaxInfo.ColumnNumber);
+            Assert.Equal(new SourcePosition(0, 0, 0), result[0].syntaxInfo.Position);
             Assert.Equal(1, result[0].syntaxInfo.Span);
 
             Assert.Equal("+", result[1].lexeme);
-            Assert.Equal(1, result[1].syntaxInfo.Position);
-            Assert.Equal(0, result[1].syntaxInfo.LineNumber);
-            Assert.Equal(1, result[1].syntaxInfo.ColumnNumber);
+            Assert.Equal(new SourcePosition(1, 0, 1), result[1].syntaxInfo.Position);
             Assert.Equal(1, result[1].syntaxInfo.Span);
 
             Assert.Equal("2", result[2].lexeme);
-            Assert.Equal(3, result[2].syntaxInfo.Position);
-            Assert.Equal(0, result[2].syntaxInfo.LineNumber);
-            Assert.Equal(3, result[2].syntaxInfo.ColumnNumber);
+            Assert.Equal(new SourcePosition(3, 0, 3), result[2].syntaxInfo.Position);
             Assert.Equal(1, result[2].syntaxInfo.Span);
 
             Assert.Equal("30", result[3].lexeme);
-            Assert.Equal(5, result[3].syntaxInfo.Position);
-            Assert.Equal(1, result[3].syntaxInfo.LineNumber);
-            Assert.Equal(0, result[3].syntaxInfo.ColumnNumber);
+            Assert.Equal(new SourcePosition(5, 1, 0), result[3].syntaxInfo.Position);
             Assert.Equal(2, result[3].syntaxInfo.Span);
 
             Assert.Equal(")", result[4].lexeme);
-            Assert.Equal(7, result[4].syntaxInfo.Position);
-            Assert.Equal(1, result[4].syntaxInfo.LineNumber);
-            Assert.Equal(2, result[4].syntaxInfo.ColumnNumber);
+            Assert.Equal(new SourcePosition(7, 1, 2), result[4].syntaxInfo.Position);
             Assert.Equal(1, result[4].syntaxInfo.Span);
         }
 

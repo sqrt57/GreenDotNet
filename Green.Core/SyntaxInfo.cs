@@ -6,22 +6,32 @@ namespace Green
     {
         public SyntaxInfo(
             SourceInfo source,
-            int position,
-            int span,
-            int lineNumber,
-            int columnNumber)
+            SourcePosition position,
+            int span)
         {
             Source = source ?? throw new ArgumentNullException(nameof(source));
             Position = position;
             Span = span;
-            LineNumber = lineNumber;
-            ColumnNumber = columnNumber;
         }
 
         public SourceInfo Source { get; }
-        public int Position { get; }
+        public SourcePosition Position { get; }
         public int Span { get; }
-        public int LineNumber { get; }
-        public int ColumnNumber { get; }
+
+        public static SyntaxInfo FromBeginEnd(
+            SourceInfo source,
+            SourcePosition begin,
+            SourcePosition end)
+        {
+            return new SyntaxInfo(source, begin, end.Position - begin.Position);
+        }
+
+        public static SyntaxInfo FromBeginSpan(
+            SourceInfo source,
+            SourcePosition begin,
+            int span)
+        {
+            return new SyntaxInfo(source, begin, span);
+        }
     }
 }
