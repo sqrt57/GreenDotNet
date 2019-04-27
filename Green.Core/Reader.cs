@@ -53,62 +53,41 @@ namespace Green
         public IEnumerable<(string lexeme, SyntaxInfo syntaxInfo)> Scan(string source)
         {
             var sourceInfo = new SourceInfo(SourceType.String, null);
-            bool inAtom = false;
-            var atom = new StringBuilder();
             var positionBuilder = new SourcePositionBuilder();
             SourcePosition atomPosition = positionBuilder.Current;
+            var enumerator = LookAhead.Enumerate(source);
 
-            foreach (char c in source)
+            while (enumerator.HasNext())
             {
+                char c = enumerator.Next();
+                enumerator.Advance();
+
                 var position = positionBuilder.Current;
                 positionBuilder.Update(c);
-                if (inAtom)
-                {
-                    if (Char.IsWhiteSpace(c))
-                    {
-                        yield return (atom.ToString(),
-                            SyntaxInfo.FromBeginEnd(sourceInfo, atomPosition, position));
-                        inAtom = false;
-                    }
-                    else if (c == '(')
-                    {
-                        yield return (atom.ToString(),
-                            SyntaxInfo.FromBeginEnd(sourceInfo, atomPosition, position));
-                        inAtom = false;
-                        yield return ("(", SyntaxInfo.FromBeginSpan(sourceInfo, position, 1));
-                    }
-                    else if (c == ')')
-                    {
-                        yield return (atom.ToString(),
-                            SyntaxInfo.FromBeginEnd(sourceInfo, atomPosition, position));
-                        inAtom = false;
-                        yield return (")", SyntaxInfo.FromBeginSpan(sourceInfo, position, 1));
-                    }
-                    else
-                        atom.Append(c);
-                }
-                else
-                {
-                    if (!Char.IsWhiteSpace(c))
-                    {
-                        if (c == '(')
-                            yield return ("(", SyntaxInfo.FromBeginSpan(sourceInfo, position, 1));
-                        else if (c == ')')
-                            yield return (")", SyntaxInfo.FromBeginSpan(sourceInfo, position, 1));
-                        else
-                        {
-                            inAtom = true;
-                            atomPosition = position;
-                            atom.Clear();
-                            atom.Append(c);
-                        }
-                    }
-                }
-            }
 
-            if (inAtom)
-            {
-                yield return (atom.ToString(), SyntaxInfo.FromBeginEnd(sourceInfo, atomPosition, positionBuilder.Current));
+                if (!Char.IsWhiteSpace(c))
+                {
+                    if (c == '(')
+                        yield return ("(", SyntaxInfo.FromBeginSpan(sourceInfo, position, 1));
+                    else if (c == ')')
+                        yield return (")", SyntaxInfo.FromBeginSpan(sourceInfo, position, 1));
+                    else
+                    {
+                        atomPosition = position;
+                        var atom = new StringBuilder();
+                        atom.Append(c);
+                        while (enumerator.HasNext())
+                        {
+                            char n = enumerator.Next();
+                            if (n == '(' || n == ')' || Char.IsWhiteSpace(n))
+                                break;
+                            atom.Append(n);
+                            positionBuilder.Update(n);
+                            enumerator.Advance();
+                        }
+                        yield return (atom.ToString(), SyntaxInfo.FromBeginEnd(sourceInfo, atomPosition, positionBuilder.Current));
+                    }
+                }
             }
         }
 
