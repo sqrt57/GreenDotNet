@@ -4,5 +4,6 @@
     {
         Const1,
         Var1,
+        Call1,
     }
 }
