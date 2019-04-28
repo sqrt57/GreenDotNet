@@ -2,7 +2,7 @@
 
 namespace Green
 {
-    public class SyntaxList : ISyntax
+    public sealed class SyntaxList : ISyntax
     {
         public SyntaxList(
             SyntaxInfo syntaxInfo,

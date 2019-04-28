@@ -1,6 +1,6 @@
 ﻿namespace Green
 {
-    public class SourceInfo
+    public sealed class SourceInfo
     {
         public SourceInfo(
             SourceType type,

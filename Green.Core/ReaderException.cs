@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace Green
 {
     [Serializable]
-    class ReaderException : Exception
+    public class ReaderException : Exception
     {
         public ReaderException()
         {

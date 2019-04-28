@@ -1,6 +1,6 @@
 ﻿namespace Green
 {
-    public class SyntaxIdentifier : ISyntax
+    public sealed class SyntaxIdentifier : ISyntax
     {
         public SyntaxIdentifier(
             SyntaxInfo syntaxInfo,

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Green
 {
-    public class Reader
+    public sealed class Reader
     {
         public IEnumerable<ISyntax> Read(string source)
         {

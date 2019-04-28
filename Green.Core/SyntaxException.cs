@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace Green
 {
     [Serializable]
-    internal class SyntaxException : Exception
+    public class SyntaxException : Exception
     {
         public SyntaxException()
         {

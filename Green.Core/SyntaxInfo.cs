@@ -2,7 +2,7 @@
 
 namespace Green
 {
-    public class SyntaxInfo
+    public sealed class SyntaxInfo
     {
         public SyntaxInfo(
             SourceInfo source,

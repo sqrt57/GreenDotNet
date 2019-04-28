@@ -1,6 +1,6 @@
 ﻿namespace Green
 {
-    public class SyntaxConstant : ISyntax
+    public sealed class SyntaxConstant : ISyntax
     {
         public SyntaxConstant(
             SyntaxInfo syntaxInfo,
