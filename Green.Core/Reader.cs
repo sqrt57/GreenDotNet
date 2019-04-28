@@ -10,30 +10,38 @@ namespace Green
     {
         public IEnumerable<ISyntax> Read(string source)
         {
-            var enumerator = Scan(source)
-                .Select(t =>
+            var enumerator = LookAhead.Enumerate(
+                Scan(source).Select(t =>
                 {
                     var (lexeme, syntaxInfo) = t;
                     var (type, value, name) = EvalToken(lexeme);
                     return (type, value, name, syntaxInfo);
-                })
-                .GetEnumerator();
+                }));
             return ReadList(enumerator, innerList: false);
         }
 
         private IEnumerable<ISyntax> ReadList(
-            IEnumerator<(TokenType type, object value, string name, SyntaxInfo syntaxInfo)> enumerator,
+            LookAheadEnumerator<(TokenType type, object value, string name, SyntaxInfo syntaxInfo)> enumerator,
             bool innerList)
         {
-            while (enumerator.MoveNext())
+            while (enumerator.HasNext())
             {
-                var (type, value, name, syntaxInfo) = enumerator.Current;
+                var (type, value, name, syntaxInfo) = enumerator.Next();
                 switch (type)
                 {
                     case TokenType.LeftBracket:
+                        enumerator.Advance();
                         var sublist = new ReadOnlyCollection<ISyntax>(ReadList(enumerator, true).ToArray());
-                        var listSyntaxInfo = syntaxInfo;
-                        yield return new SyntaxList(listSyntaxInfo, sublist);
+
+                        if (!enumerator.HasNext())
+                            throw new ReaderException("read: unexpected eof while reading list");
+
+                        var (rightBracketType, _, _, _) = enumerator.Next();
+                        enumerator.Advance();
+                        if (rightBracketType != TokenType.RightBracket)
+                            throw new ReaderException("read: list should end with right bracket");
+
+                        yield return new SyntaxList(syntaxInfo, sublist);
                         break;
                     case TokenType.RightBracket:
                         if (innerList)
@@ -41,9 +49,11 @@ namespace Green
                         else
                             throw new ReaderException("read: unexpected right bracket");
                     case TokenType.Number:
+                        enumerator.Advance();
                         yield return new SyntaxConstant(syntaxInfo, value);
                         break;
                     case TokenType.Identifier:
+                        enumerator.Advance();
                         yield return new SyntaxIdentifier(syntaxInfo, IdentifierType.Identifier, name);
                         break;
                 }
