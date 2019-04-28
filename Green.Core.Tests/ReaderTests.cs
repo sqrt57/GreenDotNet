@@ -34,6 +34,8 @@ namespace Green.Tests
             Assert.Single(result);
             Assert.IsType<SyntaxList>(result[0]);
             Assert.Empty(((SyntaxList)result[0]).Items);
+            Assert.Equal(new SourcePosition(0, 0, 0), result[0].SyntaxInfo.Position);
+            Assert.Equal(2, result[0].SyntaxInfo.Span);
         }
 
         [Fact]
@@ -42,6 +44,8 @@ namespace Green.Tests
             var result = _reader.Read("(+ 2 3)").ToArray();
             Assert.Single(result);
             Assert.IsType<SyntaxList>(result[0]);
+            Assert.Equal(new SourcePosition(0, 0, 0), result[0].SyntaxInfo.Position);
+            Assert.Equal(7, result[0].SyntaxInfo.Span);
             var subList = (SyntaxList)result[0];
             Assert.Equal(3, subList.Items.Count);
             Assert.IsType<SyntaxIdentifier>(subList.Items[0]);

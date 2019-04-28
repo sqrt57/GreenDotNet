@@ -36,12 +36,13 @@ namespace Green
                         if (!enumerator.HasNext())
                             throw new ReaderException("read: unexpected eof while reading list");
 
-                        var (rightBracketType, _, _, _) = enumerator.Next();
+                        var (rightBracketType, _, _, rightSyntaxInfo) = enumerator.Next();
                         enumerator.Advance();
                         if (rightBracketType != TokenType.RightBracket)
                             throw new ReaderException("read: list should end with right bracket");
 
-                        yield return new SyntaxList(syntaxInfo, sublist);
+                        var listSyntaxInfo = SyntaxInfo.FromLeftRight(syntaxInfo, rightSyntaxInfo);
+                        yield return new SyntaxList(listSyntaxInfo, sublist);
                         break;
                     case TokenType.RightBracket:
                         if (innerList)

@@ -33,5 +33,13 @@ namespace Green
         {
             return new SyntaxInfo(source, begin, span);
         }
+
+        public static SyntaxInfo FromLeftRight(SyntaxInfo left, SyntaxInfo right)
+        {
+            return new SyntaxInfo(
+                left.Source,
+                left.Position,
+                right.Position.Position - left.Position.Position + right.Span);
+        }
     }
 }
