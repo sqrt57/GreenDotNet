@@ -16,5 +16,18 @@ namespace Green.Tests
             Assert.Equal(1, index2);
             Assert.Equal(new object[] { 10, 20 }, result.Constants);
         }
+
+        [Fact]
+        public void AddVariable()
+        {
+            var builder = new BytecodeBuilder();
+            var index1 = builder.AddVariable("a");
+            var index2 = builder.AddVariable("b");
+            var result = builder.ToBytecode();
+
+            Assert.Equal(0, index1);
+            Assert.Equal(1, index2);
+            Assert.Equal(new object[] { "a", "b" }, result.Variables);
+        }
     }
 }

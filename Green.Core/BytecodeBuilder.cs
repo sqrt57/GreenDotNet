@@ -1,11 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Green
 {
     public sealed class BytecodeBuilder
     {
-        private List<byte> _code = new List<byte>();
-        private List<object> _constants = new List<object>();
+        private readonly List<byte> _code = new List<byte>();
+        private readonly List<object> _constants = new List<object>();
+        private readonly List<string> _variables = new List<string>();
 
         public void AddCode(OpCode code) => _code.Add((byte) code);
 
@@ -17,8 +19,15 @@ namespace Green
             return _constants.Count - 1;
         }
 
+        public int AddVariable(string name)
+        {
+            _variables.Add(name);
+            return _variables.Count - 1;
+        }
+
         public Bytecode ToBytecode() => new Bytecode(
             code: _code.ToArray(),
-            constants: _constants.ToArray());
+            constants: _constants.ToArray(),
+            variables: _variables.ToArray());
     }
 }
