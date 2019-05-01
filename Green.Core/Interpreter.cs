@@ -7,10 +7,14 @@ namespace Green
     public sealed class Interpreter
     {
         private readonly Reader _reader;
+        private readonly Dictionary<string, object> _environment = new Dictionary<string, object>();
+        private Evaluator _evaluator;
 
         public Interpreter()
         {
             _reader = new Reader();
+            _environment.Add("+", new GreenFunction(Add));
+            _evaluator = new Evaluator(_environment);
         }
 
         public object EvalSource(string source)
@@ -23,37 +27,9 @@ namespace Green
 
         private object Eval(ISyntax expr)
         {
-            switch (expr)
-            {
-                case SyntaxConstant constant:
-                    return constant.Value;
-                case SyntaxList list:
-                    if (list.Items.Count == 0)
-                        throw new SyntaxException("eval: empty application: ()");
-                    var fun = list.Items[0];
-                    var evalFun = GetFunction(fun);
-                    var args = list.Items.Skip(1).Select(Eval).ToArray();
-                    return evalFun(args);
-                case SyntaxIdentifier identifier:
-                    throw new NotImplementedException("eval: variables are not implemented");
-                default:
-                    throw new RuntimeException($"eval: cannot evaluate {expr}");
-            }
-        }
-
-        private GreenFunction GetFunction(ISyntax fun)
-        {
-            if (fun is SyntaxIdentifier id)
-            {
-                switch (id.Name)
-                {
-                    case "+": return Add;
-                    default:
-                        throw new RuntimeException($"Unknow function {id.Name}");
-                }
-            }
-            else
-                throw new RuntimeException($"Cannot use {fun} as a function");
+            var compiler = new Compiler();
+            var bytecode = compiler.Compile(expr);
+            return _evaluator.Eval(bytecode);
         }
 
         public delegate object GreenFunction(object[] args);
@@ -69,7 +45,7 @@ namespace Green
                         result += intValue;
                         break;
                     case UInt64 intValue:
-                        result += (Int64) intValue;
+                        result += (Int64)intValue;
                         break;
                     case Int32 intValue:
                         result += intValue;
