@@ -58,7 +58,7 @@ namespace Green
 
         public delegate object GreenFunction(object[] args);
 
-        public object Add(object[] args)
+        public static object Add(object[] args)
         {
             Int64 result = 0;
             foreach (var arg in args)
