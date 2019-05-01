@@ -1,4 +1,4 @@
-﻿namespace Green
+namespace Green
 {
     public enum OpCode : byte
     {
