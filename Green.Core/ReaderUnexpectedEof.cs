@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace Green
 {
     [Serializable]
-    internal class ReaderUnexpectedEof : ReaderException
+    public class ReaderUnexpectedEof : ReaderException
     {
         public ReaderUnexpectedEof()
         {

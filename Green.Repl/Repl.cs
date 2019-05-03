@@ -27,11 +27,19 @@ namespace Green.Repl
                 else
                     Console.Write(". ");
 
-                lines.Add(Console.ReadLine());
-                var result = _reader.ReadInteractive(lines);
-                if (result.Finished)
+                try
                 {
-                    Eval(result.Objects);
+                    lines.Add(Console.ReadLine());
+                    var result = _reader.ReadInteractive(lines);
+                    if (result.Finished)
+                    {
+                        Eval(result.Objects);
+                        lines.Clear();
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine($"Error: {e.Message}");
                     lines.Clear();
                 }
             }
