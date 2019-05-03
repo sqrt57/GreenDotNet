@@ -20,6 +20,14 @@ namespace Green
             return ReadList(enumerator, innerList: false);
         }
 
+        public InteractiveReadResult ReadInteractive(IList<string> lines)
+        {
+            var source = string.Join("\n", lines);
+            return new InteractiveReadResult(
+                finished: true,
+                objects: Read(source).ToArray());
+        }
+
         private IEnumerable<ISyntax> ReadList(
             LookAheadEnumerator<(TokenType type, object value, string name, SyntaxInfo syntaxInfo)> enumerator,
             bool innerList)

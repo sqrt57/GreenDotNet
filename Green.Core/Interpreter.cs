@@ -25,7 +25,7 @@ namespace Green
             return result;
         }
 
-        private object Eval(ISyntax expr)
+        public object Eval(ISyntax expr)
         {
             var compiler = new Compiler();
             var bytecode = compiler.Compile(expr);

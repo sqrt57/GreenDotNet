@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Green
 {
-    public struct SourcePosition
+    public readonly struct SourcePosition
     {
         public readonly int Position;
         public readonly int Line;

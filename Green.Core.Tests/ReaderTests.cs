@@ -28,6 +28,19 @@ namespace Green.Tests
         }
 
         [Fact]
+        public void Read_Symbol()
+        {
+            var result = _reader.Read("x").ToArray();
+            Assert.Single(result);
+            Assert.Equal(SourceType.String, result[0].SyntaxInfo.Source.Type);
+            Assert.Null(result[0].SyntaxInfo.Source.FileName);
+            Assert.Equal(new SourcePosition(0, 0, 0), result[0].SyntaxInfo.Position);
+            Assert.Equal(1, result[0].SyntaxInfo.Span);
+            Assert.IsType<SyntaxIdentifier>(result[0]);
+            Assert.Equal("x", ((SyntaxIdentifier)result[0]).Name);
+        }
+
+        [Fact]
         public void Read_EmptyList()
         {
             var result = _reader.Read("()").ToArray();
@@ -164,6 +177,20 @@ namespace Green.Tests
         {
             var (type, value, name) = _reader.EvalToken(")");
             Assert.Equal(TokenType.RightBracket, type);
+        }
+
+        [Fact]
+        public void ReadInteractive_Symbol()
+        {
+            var result = _reader.ReadInteractive(new[] { "x" });
+            Assert.True(result.Finished);
+            Assert.Single(result.Objects);
+            Assert.Equal(SourceType.String, result.Objects[0].SyntaxInfo.Source.Type);
+            Assert.Null(result.Objects[0].SyntaxInfo.Source.FileName);
+            Assert.Equal(new SourcePosition(0, 0, 0), result.Objects[0].SyntaxInfo.Position);
+            Assert.Equal(1, result.Objects[0].SyntaxInfo.Span);
+            Assert.IsType<SyntaxIdentifier>(result.Objects[0]);
+            Assert.Equal("x", ((SyntaxIdentifier)result.Objects[0]).Name);
         }
     }
 }

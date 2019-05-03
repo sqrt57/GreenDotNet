@@ -1,12 +1,14 @@
 using System;
+using System.Collections.Generic;
 
 namespace Green.Repl
 {
     public static class Program
     {
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            Console.WriteLine("Green REPL");
+            var repl = new Repl(args);
+            return repl.Run();
         }
     }
 }
