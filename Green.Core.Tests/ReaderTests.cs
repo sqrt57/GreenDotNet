@@ -180,7 +180,7 @@ namespace Green.Tests
         }
 
         [Fact]
-        public void ReadInteractive_Symbol()
+        public void ReadInteractive_Symbol_SyntaxInfo()
         {
             var result = _reader.ReadInteractive(new[] { "x" });
             Assert.True(result.Finished);
@@ -189,8 +189,28 @@ namespace Green.Tests
             Assert.Null(result.Objects[0].SyntaxInfo.Source.FileName);
             Assert.Equal(new SourcePosition(0, 0, 0), result.Objects[0].SyntaxInfo.Position);
             Assert.Equal(1, result.Objects[0].SyntaxInfo.Span);
+        }
+
+        [Fact]
+        public void ReadInteractive_Symbol()
+        {
+            var result = _reader.ReadInteractive(new[] { "x" });
+            Assert.True(result.Finished);
+            Assert.Single(result.Objects);
             Assert.IsType<SyntaxIdentifier>(result.Objects[0]);
             Assert.Equal("x", ((SyntaxIdentifier)result.Objects[0]).Name);
+        }
+
+        [Fact]
+        public void ReadInteractive_TwoSymbols()
+        {
+            var result = _reader.ReadInteractive(new[] { "x y" });
+            Assert.True(result.Finished);
+            Assert.Equal(2, result.Objects.Count);
+            Assert.IsType<SyntaxIdentifier>(result.Objects[0]);
+            Assert.Equal("x", ((SyntaxIdentifier)result.Objects[0]).Name);
+            Assert.IsType<SyntaxIdentifier>(result.Objects[1]);
+            Assert.Equal("y", ((SyntaxIdentifier)result.Objects[1]).Name);
         }
     }
 }
