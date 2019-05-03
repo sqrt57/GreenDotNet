@@ -20,12 +20,21 @@ namespace Green
             return ReadList(enumerator, innerList: false);
         }
 
-        public InteractiveReadResult ReadInteractive(IList<string> lines)
+        public InteractiveReadResult ReadInteractive(IReadOnlyList<string> lines)
         {
-            var source = string.Join("\n", lines);
-            return new InteractiveReadResult(
-                finished: true,
-                objects: Read(source).ToArray());
+            try
+            {
+                var source = string.Join("\n", lines);
+                return new InteractiveReadResult(
+                    finished: true,
+                    objects: Read(source).ToArray());
+            }
+            catch (ReaderUnexpectedEof e)
+            {
+                return new InteractiveReadResult(
+                    finished: false,
+                    objects: null);
+            }
         }
 
         private IEnumerable<ISyntax> ReadList(
@@ -42,7 +51,7 @@ namespace Green
                         var sublist = new ReadOnlyCollection<ISyntax>(ReadList(enumerator, true).ToArray());
 
                         if (!enumerator.HasNext())
-                            throw new ReaderException("read: unexpected eof while reading list");
+                            throw new ReaderUnexpectedEof("read: unexpected eof while reading list");
 
                         var (rightBracketType, _, _, rightSyntaxInfo) = enumerator.Next();
                         enumerator.Advance();

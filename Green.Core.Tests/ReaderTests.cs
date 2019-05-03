@@ -248,5 +248,35 @@ namespace Green.Tests
             Assert.IsType<SyntaxIdentifier>(result.Objects[1]);
             Assert.Equal("y", ((SyntaxIdentifier)result.Objects[1]).Name);
         }
+
+        [Fact]
+        public void ReadInteractive_TwoLines()
+        {
+            var result = _reader.ReadInteractive(new[] { "x", "y" });
+            Assert.True(result.Finished);
+            Assert.Equal(2, result.Objects.Count);
+            Assert.IsType<SyntaxIdentifier>(result.Objects[0]);
+            Assert.Equal("x", ((SyntaxIdentifier)result.Objects[0]).Name);
+            Assert.IsType<SyntaxIdentifier>(result.Objects[1]);
+            Assert.Equal("y", ((SyntaxIdentifier)result.Objects[1]).Name);
+        }
+
+        [Fact]
+        public void ReadInteractive_ListSplitIntoTwoLines()
+        {
+            var result = _reader.ReadInteractive(new[] { "(", ")" });
+            Assert.True(result.Finished);
+            Assert.Single(result.Objects);
+            Assert.IsType<SyntaxList>(result.Objects[0]);
+            Assert.Empty(((SyntaxList)result.Objects[0]).Items);
+        }
+
+
+        [Fact]
+        public void ReadInteractive_ListStart_NotFinished()
+        {
+            var result = _reader.ReadInteractive(new[] { "(" });
+            Assert.False(result.Finished);
+        }
     }
 }
