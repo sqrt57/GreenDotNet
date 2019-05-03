@@ -15,14 +15,34 @@ namespace Green.Tests
         }
 
         [Fact]
+        public void Read_Atom_SourceInfo()
+        {
+            var result = _reader.Read("58").ToArray();
+            Assert.Equal(SourceType.String, result[0].SyntaxInfo.Source.Type);
+            Assert.Null(result[0].SyntaxInfo.Source.FileName);
+        }
+
+        [Fact]
+        public void Read_Atom_SyntaxInfo()
+        {
+            var result = _reader.Read("58").ToArray();
+            Assert.Equal(new SourcePosition(0, 0, 0), result[0].SyntaxInfo.Position);
+            Assert.Equal(2, result[0].SyntaxInfo.Span);
+        }
+
+        [Fact]
+        public void Read_List_SyntaxInfo()
+        {
+            var result = _reader.Read("(+ 2 3)").ToArray();
+            Assert.Equal(new SourcePosition(0, 0, 0), result[0].SyntaxInfo.Position);
+            Assert.Equal(7, result[0].SyntaxInfo.Span);
+        }
+
+        [Fact]
         public void Read_Number()
         {
             var result = _reader.Read("5").ToArray();
             Assert.Single(result);
-            Assert.Equal(SourceType.String, result[0].SyntaxInfo.Source.Type);
-            Assert.Null(result[0].SyntaxInfo.Source.FileName);
-            Assert.Equal(new SourcePosition(0, 0, 0), result[0].SyntaxInfo.Position);
-            Assert.Equal(1, result[0].SyntaxInfo.Span);
             Assert.IsType<SyntaxConstant>(result[0]);
             Assert.Equal(5L, ((SyntaxConstant)result[0]).Value);
         }
@@ -32,10 +52,6 @@ namespace Green.Tests
         {
             var result = _reader.Read("x").ToArray();
             Assert.Single(result);
-            Assert.Equal(SourceType.String, result[0].SyntaxInfo.Source.Type);
-            Assert.Null(result[0].SyntaxInfo.Source.FileName);
-            Assert.Equal(new SourcePosition(0, 0, 0), result[0].SyntaxInfo.Position);
-            Assert.Equal(1, result[0].SyntaxInfo.Span);
             Assert.IsType<SyntaxIdentifier>(result[0]);
             Assert.Equal("x", ((SyntaxIdentifier)result[0]).Name);
         }
@@ -47,8 +63,6 @@ namespace Green.Tests
             Assert.Single(result);
             Assert.IsType<SyntaxList>(result[0]);
             Assert.Empty(((SyntaxList)result[0]).Items);
-            Assert.Equal(new SourcePosition(0, 0, 0), result[0].SyntaxInfo.Position);
-            Assert.Equal(2, result[0].SyntaxInfo.Span);
         }
 
         [Fact]
@@ -57,8 +71,6 @@ namespace Green.Tests
             var result = _reader.Read("(+ 2 3)").ToArray();
             Assert.Single(result);
             Assert.IsType<SyntaxList>(result[0]);
-            Assert.Equal(new SourcePosition(0, 0, 0), result[0].SyntaxInfo.Position);
-            Assert.Equal(7, result[0].SyntaxInfo.Span);
             var subList = (SyntaxList)result[0];
             Assert.Equal(3, subList.Items.Count);
             Assert.IsType<SyntaxIdentifier>(subList.Items[0]);
@@ -85,15 +97,29 @@ namespace Green.Tests
         }
 
         [Fact]
+        public void Scan_Number_SourceInfo()
+        {
+            var result = _reader.Scan("15").ToArray();
+            Assert.Single(result);
+            Assert.Equal(SourceType.String, result[0].syntaxInfo.Source.Type);
+            Assert.Null(result[0].syntaxInfo.Source.FileName);
+        }
+
+        [Fact]
+        public void Scan_Number_SourcePosition()
+        {
+            var result = _reader.Scan("15").ToArray();
+            Assert.Single(result);
+            Assert.Equal(new SourcePosition(0, 0, 0), result[0].syntaxInfo.Position);
+            Assert.Equal(2, result[0].syntaxInfo.Span);
+        }
+
+        [Fact]
         public void Scan_Number()
         {
             var result = _reader.Scan("15").ToArray();
             Assert.Single(result);
             Assert.Equal("15", result[0].lexeme);
-            Assert.Equal(SourceType.String, result[0].syntaxInfo.Source.Type);
-            Assert.Null(result[0].syntaxInfo.Source.FileName);
-            Assert.Equal(new SourcePosition(0, 0, 0), result[0].syntaxInfo.Position);
-            Assert.Equal(2, result[0].syntaxInfo.Span);
         }
 
         [Fact]
@@ -107,30 +133,36 @@ namespace Green.Tests
         }
 
         [Fact]
+        public void Scan_List_SourcePosition()
+        {
+            var result = _reader.Scan("(+ 2\n30)").ToArray();
+
+            Assert.Equal(new SourcePosition(0, 0, 0), result[0].syntaxInfo.Position);
+            Assert.Equal(1, result[0].syntaxInfo.Span);
+
+            Assert.Equal(new SourcePosition(1, 0, 1), result[1].syntaxInfo.Position);
+            Assert.Equal(1, result[1].syntaxInfo.Span);
+
+            Assert.Equal(new SourcePosition(3, 0, 3), result[2].syntaxInfo.Position);
+            Assert.Equal(1, result[2].syntaxInfo.Span);
+
+            Assert.Equal(new SourcePosition(5, 1, 0), result[3].syntaxInfo.Position);
+            Assert.Equal(2, result[3].syntaxInfo.Span);
+
+            Assert.Equal(new SourcePosition(7, 1, 2), result[4].syntaxInfo.Position);
+            Assert.Equal(1, result[4].syntaxInfo.Span);
+        }
+
+        [Fact]
         public void Scan_List()
         {
             var result = _reader.Scan("(+ 2\n30)").ToArray();
             Assert.Equal(5, result.Length);
-
             Assert.Equal("(", result[0].lexeme);
-            Assert.Equal(new SourcePosition(0, 0, 0), result[0].syntaxInfo.Position);
-            Assert.Equal(1, result[0].syntaxInfo.Span);
-
             Assert.Equal("+", result[1].lexeme);
-            Assert.Equal(new SourcePosition(1, 0, 1), result[1].syntaxInfo.Position);
-            Assert.Equal(1, result[1].syntaxInfo.Span);
-
             Assert.Equal("2", result[2].lexeme);
-            Assert.Equal(new SourcePosition(3, 0, 3), result[2].syntaxInfo.Position);
-            Assert.Equal(1, result[2].syntaxInfo.Span);
-
             Assert.Equal("30", result[3].lexeme);
-            Assert.Equal(new SourcePosition(5, 1, 0), result[3].syntaxInfo.Position);
-            Assert.Equal(2, result[3].syntaxInfo.Span);
-
             Assert.Equal(")", result[4].lexeme);
-            Assert.Equal(new SourcePosition(7, 1, 2), result[4].syntaxInfo.Position);
-            Assert.Equal(1, result[4].syntaxInfo.Span);
         }
 
         [Fact]
@@ -180,13 +212,17 @@ namespace Green.Tests
         }
 
         [Fact]
+        public void ReadInteractive_Symbol_SourceInfo()
+        {
+            var result = _reader.ReadInteractive(new[] { "x" });
+            Assert.Equal(SourceType.String, result.Objects[0].SyntaxInfo.Source.Type);
+            Assert.Null(result.Objects[0].SyntaxInfo.Source.FileName);
+        }
+
+        [Fact]
         public void ReadInteractive_Symbol_SyntaxInfo()
         {
             var result = _reader.ReadInteractive(new[] { "x" });
-            Assert.True(result.Finished);
-            Assert.Single(result.Objects);
-            Assert.Equal(SourceType.String, result.Objects[0].SyntaxInfo.Source.Type);
-            Assert.Null(result.Objects[0].SyntaxInfo.Source.FileName);
             Assert.Equal(new SourcePosition(0, 0, 0), result.Objects[0].SyntaxInfo.Position);
             Assert.Equal(1, result.Objects[0].SyntaxInfo.Span);
         }
