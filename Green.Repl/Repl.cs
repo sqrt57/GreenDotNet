@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Green.Repl
 {
-    public class Repl
+    public sealed class Repl
     {
         private readonly Interpreter _interpreter;
         private readonly Reader _reader;

@@ -7,14 +7,19 @@ namespace Green
     public sealed class Interpreter
     {
         private readonly Reader _reader;
-        private readonly Dictionary<string, object> _environment = new Dictionary<string, object>();
-        private Evaluator _evaluator;
+        private readonly IModule _module;
+        private readonly Evaluator _evaluator;
 
         public Interpreter()
         {
             _reader = new Reader();
-            _environment.Add("+", new GreenFunction(Add));
-            _evaluator = new Evaluator(_environment);
+            _module = new ReadonlyModule(
+                name: "main",
+                globals: new Dictionary<string, object>
+                {
+                    ["+"] = new GreenFunction(Add),
+                });
+            _evaluator = new Evaluator();
         }
 
         public object EvalSource(string source)
@@ -29,7 +34,7 @@ namespace Green
         {
             var compiler = new Compiler();
             var bytecode = compiler.Compile(expr);
-            return _evaluator.Eval(bytecode);
+            return _evaluator.Eval(_module, bytecode);
         }
 
         public delegate object GreenFunction(object[] args);

@@ -10,13 +10,21 @@ namespace Green.Tests
         [Fact]
         public void Eval_Constant()
         {
+            var module = new ReadonlyModule(
+                name: "main",
+                globals: new Dictionary<string, object>
+                {
+                    ["+"] = new Interpreter.GreenFunction(Interpreter.Add),
+                });
+
             var bytecode = new Bytecode(
                 code: new byte[] { (byte)OpCode.Const1, 0, },
                 constants: new object[] { 3, },
                 variables: new string[] { });
-            var evaluator = new Evaluator(new Dictionary<string, object>());
 
-            var result = evaluator.Eval(bytecode);
+            var evaluator = new Evaluator();
+
+            var result = evaluator.Eval(module, bytecode);
 
             Assert.Equal(3, result);
         }
@@ -24,13 +32,21 @@ namespace Green.Tests
         [Fact]
         public void Eval_Variable()
         {
+            var module = new ReadonlyModule(
+                name: "main",
+                globals: new Dictionary<string, object>
+                {
+                    ["x"] = 5,
+                });
+
             var bytecode = new Bytecode(
                 code: new byte[] { (byte)OpCode.Var1, 0, },
                 constants: new object[] { },
                 variables: new string[] { "x", });
-            var evaluator = new Evaluator(new Dictionary<string, object> { ["x"] = 5, });
 
-            var result = evaluator.Eval(bytecode);
+            var evaluator = new Evaluator();
+
+            var result = evaluator.Eval(module, bytecode);
 
             Assert.Equal(5, result);
         }
@@ -38,6 +54,13 @@ namespace Green.Tests
         [Fact]
         public void Eval_Call()
         {
+            var module = new ReadonlyModule(
+                name: "main",
+                globals: new Dictionary<string, object>
+                {
+                    ["+"] = new Interpreter.GreenFunction(Interpreter.Add),
+                });
+
             var bytecode = new Bytecode(
                 code: new byte[]
                 {
@@ -48,9 +71,10 @@ namespace Green.Tests
                 },
                 constants: new object[] { new Interpreter.GreenFunction(Interpreter.Add), 2L, 3L, },
                 variables: new string[] { });
-            var evaluator = new Evaluator(new Dictionary<string, object>());
 
-            var result = evaluator.Eval(bytecode);
+            var evaluator = new Evaluator();
+
+            var result = evaluator.Eval(module, bytecode);
 
             Assert.Equal(5L, result);
         }

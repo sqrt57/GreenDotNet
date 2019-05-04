@@ -1,19 +1,11 @@
-using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Green
 {
-    public class Evaluator
+    public sealed class Evaluator
     {
-        private IDictionary<string, object> _environment;
-
-        public Evaluator(IDictionary<string, object> environment)
-        {
-            _environment = environment;
-        }
-
-        public object Eval(Bytecode bytecode)
+        public object Eval(IModule module, Bytecode bytecode)
         {
             var stack = new Stack<object>();
             int ip = 0;
@@ -33,7 +25,7 @@ namespace Green
                         {
                             var index = bytecode.Code[ip++];
                             var variable = bytecode.Variables[index];
-                            var value = _environment[variable];
+                            var value = module.Globals[variable];
                             stack.Push(value);
                             break;
                         }
