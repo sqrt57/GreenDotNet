@@ -22,9 +22,7 @@ namespace Green.Tests
                 constants: new object[] { 3, },
                 variables: new string[] { });
 
-            var evaluator = new Evaluator();
-
-            var result = evaluator.Eval(module, bytecode);
+            var result = Evaluator.Eval(module, bytecode);
 
             Assert.Equal(3, result);
         }
@@ -44,9 +42,7 @@ namespace Green.Tests
                 constants: new object[] { },
                 variables: new string[] { "x", });
 
-            var evaluator = new Evaluator();
-
-            var result = evaluator.Eval(module, bytecode);
+            var result = Evaluator.Eval(module, bytecode);
 
             Assert.Equal(5, result);
         }
@@ -72,9 +68,7 @@ namespace Green.Tests
                 constants: new object[] { new Interpreter.GreenFunction(Interpreter.Add), 2L, 3L, },
                 variables: new string[] { });
 
-            var evaluator = new Evaluator();
-
-            var result = evaluator.Eval(module, bytecode);
+            var result = Evaluator.Eval(module, bytecode);
 
             Assert.Equal(5L, result);
         }

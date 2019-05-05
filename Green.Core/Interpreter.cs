@@ -8,7 +8,6 @@ namespace Green
     {
         private readonly Reader _reader;
         private readonly IModule _module;
-        private readonly Evaluator _evaluator;
 
         public Interpreter()
         {
@@ -19,7 +18,6 @@ namespace Green
                 {
                     ["+"] = new GreenFunction(Add),
                 });
-            _evaluator = new Evaluator();
         }
 
         public object EvalSource(string source)
@@ -34,7 +32,7 @@ namespace Green
         {
             var compiler = new Compiler();
             var bytecode = compiler.Compile(expr);
-            return _evaluator.Eval(_module, bytecode);
+            return Evaluator.Eval(_module, bytecode);
         }
 
         public delegate object GreenFunction(object[] args);

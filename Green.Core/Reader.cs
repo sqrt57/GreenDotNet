@@ -29,7 +29,7 @@ namespace Green
                     finished: true,
                     objects: Read(source).ToArray());
             }
-            catch (ReaderUnexpectedEof e)
+            catch (ReaderUnexpectedEof)
             {
                 return new InteractiveReadResult(
                     finished: false,

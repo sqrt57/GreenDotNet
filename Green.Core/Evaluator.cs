@@ -3,9 +3,9 @@ using System.Text;
 
 namespace Green
 {
-    public sealed class Evaluator
+    public static class Evaluator
     {
-        public object Eval(IModule module, Bytecode bytecode)
+        public static object Eval(IModule module, Bytecode bytecode)
         {
             var stack = new Stack<object>();
             int ip = 0;
