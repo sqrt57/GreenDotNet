@@ -4,7 +4,7 @@ open System
 open System.Collections.Generic
 
 let eval (interpreter : Interpreter) objects =
-    let results = new List<Object>()
+    let results = List<obj>()
 
     for o in objects do
         let result = interpreter.Eval o
@@ -16,9 +16,9 @@ let eval (interpreter : Interpreter) objects =
         printfn "%A" result
 
 let run _ =
-    let interpreter = new Interpreter()
-    let reader = new Reader()
-    let lines = new List<string>()
+    let interpreter = Interpreter()
+    let reader = Reader()
+    let lines = List<string>()
 
     printfn "Green REPL"
 
