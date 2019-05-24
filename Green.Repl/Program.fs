@@ -2,6 +2,7 @@ module Green.Repl
 
 open System
 open System.Collections.Generic
+open Green.Interpreter
 
 let eval (interpreter : Interpreter) objects =
     let results = List<obj>()

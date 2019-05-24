@@ -1,7 +1,7 @@
 module InterpreterTests
 
 open Xunit
-open Green
+open Green.Interpreter
 
 [<Fact>]
 let Eval_Number() =
