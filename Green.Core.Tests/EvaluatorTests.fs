@@ -6,7 +6,7 @@ open Green
 [<Fact>]
 let Eval_Constant() =
     let ``module`` = ReadonlyModule(name = "main",
-                                    globals = readOnlyDict["+", Interpreter.GreenFunction(Interpreter.Add) :> obj])
+                                    globals = readOnlyDict["+", Types.GreenFunction(BaseLibrary.Add) :> obj])
 
     let bytecode = Bytecode(code = [ byte OpCode.Const1; byte 0; ],
                             constants = [ 3 ],
@@ -32,7 +32,7 @@ let Eval_Variable() =
 [<Fact>]
 let Eval_Call() =
     let ``module`` = ReadonlyModule(name = "main",
-                                    globals = readOnlyDict["+", Interpreter.GreenFunction(Interpreter.Add) :> obj])
+                                    globals = readOnlyDict["+", Types.GreenFunction(BaseLibrary.Add) :> obj])
 
     let bytecode = Bytecode(code = [
                                 byte OpCode.Const1; byte 0;
@@ -40,7 +40,7 @@ let Eval_Call() =
                                 byte OpCode.Const1; byte 2;
                                 byte OpCode.Call1; byte 2;
                             ],
-                            constants = [ Interpreter.GreenFunction(Interpreter.Add) :> obj; 2L :> obj; 3L :> obj; ],
+                            constants = [ Types.GreenFunction(BaseLibrary.Add) :> obj; 2L :> obj; 3L :> obj; ],
                             variables = [])
 
     let result = Evaluator.Eval(``module``, bytecode)

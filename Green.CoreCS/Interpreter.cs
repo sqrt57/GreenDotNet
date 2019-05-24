@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Green
 {
@@ -16,7 +14,7 @@ namespace Green
                 name: "main",
                 globals: new Dictionary<string, object>
                 {
-                    ["+"] = new GreenFunction(Add),
+                    ["+"] = new Types.GreenFunction(BaseLibrary.Add),
                 });
         }
 
@@ -35,32 +33,5 @@ namespace Green
             return Evaluator.Eval(_module, bytecode);
         }
 
-        public delegate object GreenFunction(object[] args);
-
-        public static object Add(object[] args)
-        {
-            Int64 result = 0;
-            foreach (var arg in args)
-            {
-                switch (arg)
-                {
-                    case Int64 intValue:
-                        result += intValue;
-                        break;
-                    case UInt64 intValue:
-                        result += (Int64)intValue;
-                        break;
-                    case Int32 intValue:
-                        result += intValue;
-                        break;
-                    case UInt32 intValue:
-                        result += intValue;
-                        break;
-                    default:
-                        throw new RuntimeException($"+: bad argument {arg}");
-                }
-            }
-            return result;
-        }
     }
 }

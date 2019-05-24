@@ -35,7 +35,7 @@ namespace Green
                             var args = new object[argsCount];
                             for (int i = argsCount - 1; i >= 0; i--)
                                 args[i] = stack.Pop();
-                            var fun = (Interpreter.GreenFunction) stack.Pop();
+                            var fun = (Types.GreenFunction) stack.Pop();
                             stack.Push(fun(args));
                         }
                         break;
