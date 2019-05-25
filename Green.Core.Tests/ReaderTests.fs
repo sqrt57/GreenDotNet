@@ -3,62 +3,58 @@ module ReaderTests
 open System.Linq
 open Xunit
 open Green
+open Green.Read
 
 [<Fact>]
 let Read_Empty() =
-    let reader = Reader()
-    let result = reader.Read("").ToArray()
+    let result = read ""
     Assert.Empty(result)
 
 [<Fact>]
 let Read_Atom_SourceInfo() =
-    let reader = Reader()
-    let result = reader.Read("58").ToArray()
-    Assert.Equal(SourceType.String, result.[0].SyntaxInfo.Source.Type)
-    Assert.Null(result.[0].SyntaxInfo.Source.FileName)
+    let result = read "58" |> Seq.toList
+    let onlyResult = Assert.Single(result)
+    Assert.Equal(SourceType.String, onlyResult.SyntaxInfo.Source.Type)
+    Assert.Null(onlyResult.SyntaxInfo.Source.FileName)
 
 [<Fact>]
 let Read_Atom_SyntaxInfo() =
-    let reader = Reader()
-    let result = reader.Read("58").ToArray()
-    Assert.Equal(SourcePosition(0, 0, 0), result.[0].SyntaxInfo.Position)
-    Assert.Equal(2, result.[0].SyntaxInfo.Span)
+    let result = read "58" |> Seq.toList
+    let onlyResult = Assert.Single(result)
+    Assert.Equal(SourcePosition(0, 0, 0), onlyResult.SyntaxInfo.Position)
+    Assert.Equal(2, onlyResult.SyntaxInfo.Span)
 
 [<Fact>]
 let Read_List_SyntaxInfo() =
-    let reader = Reader()
-    let result = reader.Read("(+ 2 3)").ToArray()
-    Assert.Equal(SourcePosition(0, 0, 0), result.[0].SyntaxInfo.Position)
-    Assert.Equal(7, result.[0].SyntaxInfo.Span)
+    let result = read "(+ 2 3)" |> Seq.toList
+    let onlyResult = Assert.Single(result)
+    Assert.Equal(SourcePosition(0, 0, 0), onlyResult.SyntaxInfo.Position)
+    Assert.Equal(7, onlyResult.SyntaxInfo.Span)
 
 [<Fact>]
 let Read_Number() =
-    let reader = Reader()
-    let result = reader.Read("5").ToArray()
+    let result = read "5" |> Seq.toList
     let onlyResult = Assert.Single(result)
     let constant = Assert.IsType<SyntaxConstant>(onlyResult)
     Assert.Equal<obj>(5L, constant.Value)
 
 [<Fact>]
 let Read_Symbol() =
-    let reader = Reader()
-    let result = reader.Read("x").ToArray()
+    let result = read "x" |> Seq.toList
     let onlyResult = Assert.Single(result)
     let identifier = Assert.IsType<SyntaxIdentifier>(onlyResult)
     Assert.Equal("x", identifier.Name)
 
 [<Fact>]
 let Read_EmptyList() =
-    let reader = Reader()
-    let result = reader.Read("()").ToArray()
+    let result = read "()" |> Seq.toList
     let onlyResult = Assert.Single(result)
     let list = Assert.IsType<SyntaxList>(onlyResult)
     Assert.Empty(list.Items)
 
 [<Fact>]
 let Read_List() =
-    let reader = Reader()
-    let result = reader.Read("(+ 2 3)").ToArray()
+    let result = read "(+ 2 3)" |> Seq.toList
     let onlyResult = Assert.Single(result)
     let list = Assert.IsType<SyntaxList>(onlyResult)
     Assert.Equal(3, list.Items.Count)
@@ -191,69 +187,72 @@ let EvalToken_RightBracket()=
 
 [<Fact>]
 let ReadInteractive_Symbol_SourceInfo() =
-    let reader = Reader()
-    let result = reader.ReadInteractive([ "x" ])
-    let object = Assert.Single(result.Objects)
-    Assert.Equal(SourceType.String, object.SyntaxInfo.Source.Type)
-    Assert.Null(object.SyntaxInfo.Source.FileName)
+    match readInteractive [ "x" ] with
+    | None -> Assert.True(false, "Should return Some(objects)")
+    | Some objects ->
+        let object = Assert.Single(objects)
+        Assert.Equal(SourceType.String, object.SyntaxInfo.Source.Type)
+        Assert.Null(object.SyntaxInfo.Source.FileName)
 
 [<Fact>]
 let ReadInteractive_Symbol_SyntaxInfo() =
-    let reader = Reader()
-    let result = reader.ReadInteractive([ "x" ])
-    let object = Assert.Single(result.Objects)
-    Assert.Equal(SourcePosition(0, 0, 0), object.SyntaxInfo.Position)
-    Assert.Equal(1, object.SyntaxInfo.Span)
+    match readInteractive [ "x" ] with
+    | None -> Assert.True(false, "Should return Some(objects)")
+    | Some objects ->
+        let object = Assert.Single(objects)
+        Assert.Equal(SourcePosition(0, 0, 0), object.SyntaxInfo.Position)
+        Assert.Equal(1, object.SyntaxInfo.Span)
 
 [<Fact>]
 let ReadInteractive_Symbol() =
-    let reader = Reader()
-    let result = reader.ReadInteractive([ "x" ])
-    Assert.True(result.Finished)
-    let object = Assert.Single(result.Objects)
-    let identifier = Assert.IsType<SyntaxIdentifier>(object)
-    Assert.Equal("x", identifier.Name)
+    match readInteractive [ "x" ] with
+    | None -> Assert.True(false, "Should return Some(objects)")
+    | Some objects ->
+        let object = Assert.Single(objects)
+        let identifier = Assert.IsType<SyntaxIdentifier>(object)
+        Assert.Equal("x", identifier.Name)
 
 [<Fact>]
 let ReadInteractive_TwoSymbols() =
-    let reader = Reader()
-    let result = reader.ReadInteractive([ "x y" ])
-    Assert.True(result.Finished)
-    Assert.Equal(2, result.Objects.Count)
-    match result.Objects.ToArray() with
-    | [| o0; o1 |] ->
-        let identifier0 = Assert.IsType<SyntaxIdentifier>(o0)
-        Assert.Equal("x", identifier0.Name)
-        let identifier1 = Assert.IsType<SyntaxIdentifier>(o1)
-        Assert.Equal("y", identifier1.Name)
-    | _ -> ()
+    match readInteractive [ "x y" ] with
+    | None -> Assert.True(false, "Should return Some(objects)")
+    | Some objects ->
+        Assert.Equal(2, Seq.length objects)
+        match objects.ToArray() with
+        | [| o0; o1 |] ->
+            let identifier0 = Assert.IsType<SyntaxIdentifier>(o0)
+            Assert.Equal("x", identifier0.Name)
+            let identifier1 = Assert.IsType<SyntaxIdentifier>(o1)
+            Assert.Equal("y", identifier1.Name)
+        | _ -> ()
 
 [<Fact>]
 let ReadInteractive_TwoLines() =
-    let reader = Reader()
-    let result = reader.ReadInteractive([ "x"; "y" ])
-    Assert.True(result.Finished)
-    Assert.Equal(2, result.Objects.Count)
-    match result.Objects.ToArray() with
-    | [| o0; o1 |] ->
-        let identifier0 = Assert.IsType<SyntaxIdentifier>(o0)
-        Assert.Equal("x", identifier0.Name)
-        let identifier1 = Assert.IsType<SyntaxIdentifier>(o1)
-        Assert.Equal("y", identifier1.Name)
-    | _ -> ()
+    match readInteractive [ "x"; "y" ] with
+    | None -> Assert.True(false, "Should return Some(objects)")
+    | Some objects ->
+        Assert.Equal(2, Seq.length objects)
+        match objects.ToArray() with
+        | [| o0; o1 |] ->
+            let identifier0 = Assert.IsType<SyntaxIdentifier>(o0)
+            Assert.Equal("x", identifier0.Name)
+            let identifier1 = Assert.IsType<SyntaxIdentifier>(o1)
+            Assert.Equal("y", identifier1.Name)
+        | _ -> ()
 
 [<Fact>]
 let ReadInteractive_ListSplitIntoTwoLines() =
-    let reader = Reader()
-    let result = reader.ReadInteractive([ "("; ")" ])
-    Assert.True(result.Finished)
-    let object = Assert.Single(result.Objects)
-    let list = Assert.IsType<SyntaxList>(object)
-    Assert.Empty(list.Items)
+    match readInteractive [ "("; ")" ] with
+    | None -> Assert.True(false, "Should return Some(objects)")
+    | Some objects ->
+        let object = Assert.Single(objects)
+        let list = Assert.IsType<SyntaxList>(object)
+        Assert.Empty(list.Items)
 
 [<Fact>]
 let ReadInteractive_ListStart_NotFinished() =
-    let reader = Reader()
-    let result = reader.ReadInteractive([ "(" ])
-    Assert.False(result.Finished)
-
+    let result = readInteractive [ "(" ]
+    Assert.Equal(result, None)
+    match result with
+    | None -> ()
+    | Some _ -> Assert.True(false, "Should return None")

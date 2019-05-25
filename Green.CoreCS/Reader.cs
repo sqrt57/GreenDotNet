@@ -8,36 +8,7 @@ namespace Green
 {
     public sealed class Reader
     {
-        public IEnumerable<ISyntax> Read(string source)
-        {
-            var enumerator = LookAhead.Enumerate(
-                Scan(source).Select(t =>
-                {
-                    var (lexeme, syntaxInfo) = t;
-                    var (type, value, name) = EvalToken(lexeme);
-                    return (type, value, name, syntaxInfo);
-                }));
-            return ReadList(enumerator, innerList: false);
-        }
-
-        public InteractiveReadResult ReadInteractive(IReadOnlyList<string> lines)
-        {
-            try
-            {
-                var source = string.Join("\n", lines);
-                return new InteractiveReadResult(
-                    finished: true,
-                    objects: Read(source).ToArray());
-            }
-            catch (ReaderUnexpectedEof)
-            {
-                return new InteractiveReadResult(
-                    finished: false,
-                    objects: null);
-            }
-        }
-
-        private IEnumerable<ISyntax> ReadList(
+        public IEnumerable<ISyntax> ReadList(
             LookAheadEnumerator<(TokenType type, object value, string name, SyntaxInfo syntaxInfo)> enumerator,
             bool innerList)
         {

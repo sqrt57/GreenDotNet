@@ -2,6 +2,7 @@ module Green.Repl
 
 open System
 open System.Collections.Generic
+open Green.Read
 open Green.Interpreter
 
 let eval (interpreter : Interpreter) objects =
@@ -18,7 +19,6 @@ let eval (interpreter : Interpreter) objects =
 
 let run _ =
     let interpreter = Interpreter()
-    let reader = Reader()
     let lines = List<string>()
 
     printfn "Green REPL"
@@ -30,9 +30,10 @@ let run _ =
 
         try
             lines.Add <| Console.ReadLine()
-            let result = reader.ReadInteractive lines
-            if result.Finished then
-                eval interpreter result.Objects
+            match readInteractive lines with
+            | None -> ()
+            | Some objects ->
+                eval interpreter objects
                 lines.Clear()
         with ex ->
             printfn "Error: %s" ex.Message

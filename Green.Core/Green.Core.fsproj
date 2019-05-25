@@ -5,7 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Read.fs" />
+    <Compile Include="Compile.fs" />
     <Compile Include="Interpreter.fs" />
+    <None Include="Explore.fsx" />
   </ItemGroup>
 
   <ItemGroup>
