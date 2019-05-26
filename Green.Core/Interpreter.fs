@@ -1,20 +1,23 @@
-module Green.Interpreter
+namespace Green
 
-open Green.Read
+open Read
+open Compile
 
-type Interpreter() =
+module Interpreter =
 
-    let mainModule : IModule = ReadonlyModule(name = "main",
-                                              globals = readOnlyDict[
-                                                  "+", Types.GreenFunction(BaseLibrary.Add) :> obj;
-                                              ]) :> IModule
+    type Interpreter() =
 
-    member this.EvalSource(source : string) : obj =
-        let mutable result = null
-        for expr in read source do
-            result <- this.Eval(expr)
-        result
+        let mainModule : IModule = ReadonlyModule(name = "main",
+                                                  globals = readOnlyDict[
+                                                      "+", Types.GreenFunction(BaseLibrary.Add) :> obj;
+                                                  ]) :> IModule
 
-    member this.Eval(expr : ISyntax) : obj =
-        let bytecode = Compile.Compile expr
-        Evaluator.Eval(mainModule, bytecode)
+        member this.Eval expr : obj =
+            let bytecode = compile expr
+            Evaluator.Eval(mainModule, bytecode)
+
+        member this.EvalSource(source : string) : obj =
+            let mutable result = null
+            for expr in read source do
+                result <- this.Eval expr
+            result

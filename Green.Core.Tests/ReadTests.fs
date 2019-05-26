@@ -3,6 +3,7 @@ module ReaderTests
 open System.Linq
 open Xunit
 open Green
+open Green.Source
 open Green.Read
 
 [<Fact>]
@@ -13,72 +14,70 @@ let Read_Empty() =
 [<Fact>]
 let Read_Atom_SourceInfo() =
     let result = read "58" |> Seq.toList
-    let onlyResult = Assert.Single(result)
-    Assert.Equal(SourceType.String, onlyResult.SyntaxInfo.Source.Type)
-    Assert.Null(onlyResult.SyntaxInfo.Source.FileName)
+    let { Info = syntaxInfo } = Assert.Single(result)
+    Assert.Equal(SourceType.String, syntaxInfo.Source.Type)
+    Assert.Null(syntaxInfo.Source.FileName)
 
 [<Fact>]
 let Read_Atom_SyntaxInfo() =
     let result = read "58" |> Seq.toList
-    let onlyResult = Assert.Single(result)
-    Assert.Equal(SourcePosition(0, 0, 0), onlyResult.SyntaxInfo.Position)
-    Assert.Equal(2, onlyResult.SyntaxInfo.Span)
+    let { Info = syntaxInfo } = Assert.Single(result)
+    Assert.Equal(SourcePosition(0, 0, 0), syntaxInfo.Position)
+    Assert.Equal(2, syntaxInfo.Span)
 
 [<Fact>]
 let Read_List_SyntaxInfo() =
     let result = read "(+ 2 3)" |> Seq.toList
-    let onlyResult = Assert.Single(result)
-    Assert.Equal(SourcePosition(0, 0, 0), onlyResult.SyntaxInfo.Position)
-    Assert.Equal(7, onlyResult.SyntaxInfo.Span)
+    let { Info = syntaxInfo } = Assert.Single(result)
+    Assert.Equal(SourcePosition(0, 0, 0), syntaxInfo.Position)
+    Assert.Equal(7, syntaxInfo.Span)
 
 [<Fact>]
 let Read_Number() =
     let result = read "5" |> Seq.toList
-    let onlyResult = Assert.Single(result)
-    let constant = Assert.IsType<SyntaxConstant>(onlyResult)
-    Assert.Equal<obj>(5L, constant.Value)
+    let { Syntax = syntax } = Assert.Single(result)
+    Assert.Equal(syntax, Syntax.Constant 5L)
 
 [<Fact>]
 let Read_Symbol() =
     let result = read "x" |> Seq.toList
-    let onlyResult = Assert.Single(result)
-    let identifier = Assert.IsType<SyntaxIdentifier>(onlyResult)
-    Assert.Equal("x", identifier.Name)
+    let { Syntax = syntax } = Assert.Single(result)
+    Assert.Equal(Syntax.Identifier "x", syntax)
 
 [<Fact>]
 let Read_EmptyList() =
     let result = read "()" |> Seq.toList
-    let onlyResult = Assert.Single(result)
-    let list = Assert.IsType<SyntaxList>(onlyResult)
-    Assert.Empty(list.Items)
+    let { Syntax = syntax } = Assert.Single(result)
+    Assert.Equal(Syntax.List [], syntax)
 
 [<Fact>]
 let Read_List() =
     let result = read "(+ 2 3)" |> Seq.toList
-    let onlyResult = Assert.Single(result)
-    let list = Assert.IsType<SyntaxList>(onlyResult)
-    Assert.Equal(3, list.Items.Count)
-    let subItem0 = Assert.IsType<SyntaxIdentifier>(list.Items.[0])
-    Assert.Equal(IdentifierType.Identifier, subItem0.Type)
-    Assert.Equal("+", subItem0.Name)
-    let subItem1 = Assert.IsType<SyntaxConstant>(list.Items.[1])
-    Assert.Equal<obj>(2L, subItem1.Value)
-    let subItem2 = Assert.IsType<SyntaxConstant>(list.Items.[2])
-    Assert.Equal<obj>(3L, subItem2.Value)
+    let { Syntax = syntax } = Assert.Single(result)
+    match syntax with
+    | Syntax.List list ->
+        Assert.Equal(3, List.length list)
+        match list with
+        | [{ Syntax = s0 }; { Syntax = s1 }; { Syntax = s2 }] ->
+            Assert.Equal(Syntax.Identifier "+", s0)
+            Assert.Equal(Syntax.Constant 2L, s1)
+            Assert.Equal(Syntax.Constant 3L, s2)
+        | _ -> ()
+    | _ -> Assert.True(false, "Should return List")
 
 [<Fact>]
 let Scan_Empty() =
-    let result = (scan "").ToArray()
+    let result = scan ""
     Assert.Empty(result)
 
 [<Fact>]
 let Scan_Whitespace() =
-    let result = (scan " ").ToArray()
+    let result = scan " "
     Assert.Empty(result)
 
 [<Fact>]
 let Scan_Number_SourceInfo() =
-    let result = (scan "15").ToArray()
+    let result = scan "15"
     let struct (_, syntaxInfo) = Assert.Single(result)
     Assert.Equal(SourceType.String, syntaxInfo.Source.Type)
     Assert.Null(syntaxInfo.Source.FileName)
@@ -127,10 +126,10 @@ let Scan_List_SourcePosition() =
 
 [<Fact>]
 let Scan_List() =
-    let result = (scan "(+ 2\n30)").ToArray()
-    Assert.Equal(5, Array.length result)
+    let result = scan "(+ 2\n30)" |> Seq.toList
+    Assert.Equal(5, List.length result)
     match result with
-    | [| (l0, _); (l1, _); (l2, _); (l3, _); (l4, _) |] ->
+    | [ (l0, _); (l1, _); (l2, _); (l3, _); (l4, _) ] ->
         Assert.Equal("(", l0)
         Assert.Equal("+", l1)
         Assert.Equal("2", l2)
@@ -140,64 +139,63 @@ let Scan_List() =
 
 [<Fact>]
 let EvalToken_Number() =
-    let struct (tokenType, value, _) = evalToken "12"
-    Assert.Equal(TokenType.Number, tokenType)
-    Assert.Equal<obj>(12L, value)
+    match evalToken "12" with
+    | Number value -> Assert.Equal<obj>(12L, value)
+    | _ -> Assert.True(false, "Should return Number")
 
 [<Fact>]
 let EvalToken_NegativeNumber() =
-    let struct (tokenType, value, _) = evalToken "-12"
-    Assert.Equal(TokenType.Number, tokenType)
-    Assert.Equal<obj>(-12L, value)
+    match evalToken "-12" with
+    | Number value -> Assert.Equal<obj>(-12L, value)
+    | _ -> Assert.True(false, "Should return Number")
 
 [<Fact>]
 let EvalToken_Identifier() =
-    let struct (tokenType, _, name) = evalToken "abc"
-    Assert.Equal(TokenType.Identifier, tokenType)
-    Assert.Equal("abc", name)
+    match evalToken "abc" with
+    | Token.Identifier value -> Assert.Equal<obj>("abc", value)
+    | _ -> Assert.True(false, "Should return Identifier")
 
 [<Fact>]
 let EvalToken_Plus_Identifier() =
-    let struct (tokenType, _, name) = evalToken "+"
-    Assert.Equal(TokenType.Identifier, tokenType)
-    Assert.Equal("+", name)
+    match evalToken "+" with
+    | Token.Identifier value -> Assert.Equal<obj>("+", value)
+    | _ -> Assert.True(false, "Should return Identifier")
 
 [<Fact>]
 let EvalToken_LeftBracket() =
-    let struct (tokenType, _, _) = evalToken "("
-    Assert.Equal(TokenType.LeftBracket, tokenType)
+    let token = evalToken "("
+    Assert.Equal(LeftBracket, token)
 
 [<Fact>]
 let EvalToken_RightBracket()=
-    let struct (tokenType, _, _) = evalToken ")"
-    Assert.Equal(TokenType.RightBracket, tokenType)
+    let token = evalToken ")"
+    Assert.Equal(RightBracket, token)
 
 [<Fact>]
 let ReadInteractive_Symbol_SourceInfo() =
     match readInteractive [ "x" ] with
     | None -> Assert.True(false, "Should return Some(objects)")
     | Some objects ->
-        let object = Assert.Single(objects)
-        Assert.Equal(SourceType.String, object.SyntaxInfo.Source.Type)
-        Assert.Null(object.SyntaxInfo.Source.FileName)
+        let { Info = syntaxInfo } = Assert.Single(objects)
+        Assert.Equal(SourceType.String, syntaxInfo.Source.Type)
+        Assert.Null(syntaxInfo.Source.FileName)
 
 [<Fact>]
 let ReadInteractive_Symbol_SyntaxInfo() =
     match readInteractive [ "x" ] with
-    | None -> Assert.True(false, "Should return Some(objects)")
+    | None -> Assert.True(false, "Should return Some objects")
     | Some objects ->
-        let object = Assert.Single(objects)
-        Assert.Equal(SourcePosition(0, 0, 0), object.SyntaxInfo.Position)
-        Assert.Equal(1, object.SyntaxInfo.Span)
+        let { Info = syntaxInfo } = Assert.Single(objects)
+        Assert.Equal(SourcePosition(0, 0, 0), syntaxInfo.Position)
+        Assert.Equal(1, syntaxInfo.Span)
 
 [<Fact>]
 let ReadInteractive_Symbol() =
     match readInteractive [ "x" ] with
-    | None -> Assert.True(false, "Should return Some(objects)")
+    | None -> Assert.True(false, "Should return Some objects")
     | Some objects ->
-        let object = Assert.Single(objects)
-        let identifier = Assert.IsType<SyntaxIdentifier>(object)
-        Assert.Equal("x", identifier.Name)
+        let { Syntax = syntax } = Assert.Single(objects)
+        Assert.Equal(Syntax.Identifier "x", syntax)
 
 [<Fact>]
 let ReadInteractive_TwoSymbols() =
@@ -205,12 +203,10 @@ let ReadInteractive_TwoSymbols() =
     | None -> Assert.True(false, "Should return Some(objects)")
     | Some objects ->
         Assert.Equal(2, Seq.length objects)
-        match objects.ToArray() with
-        | [| o0; o1 |] ->
-            let identifier0 = Assert.IsType<SyntaxIdentifier>(o0)
-            Assert.Equal("x", identifier0.Name)
-            let identifier1 = Assert.IsType<SyntaxIdentifier>(o1)
-            Assert.Equal("y", identifier1.Name)
+        match objects with
+        | [ {Syntax = s0}; {Syntax = s1} ] ->
+            Assert.Equal(Syntax.Identifier "x", s0)
+            Assert.Equal(Syntax.Identifier "y", s1)
         | _ -> ()
 
 [<Fact>]
@@ -219,12 +215,10 @@ let ReadInteractive_TwoLines() =
     | None -> Assert.True(false, "Should return Some(objects)")
     | Some objects ->
         Assert.Equal(2, Seq.length objects)
-        match objects.ToArray() with
-        | [| o0; o1 |] ->
-            let identifier0 = Assert.IsType<SyntaxIdentifier>(o0)
-            Assert.Equal("x", identifier0.Name)
-            let identifier1 = Assert.IsType<SyntaxIdentifier>(o1)
-            Assert.Equal("y", identifier1.Name)
+        match objects with
+        | [ {Syntax = s0}; {Syntax = s1} ] ->
+            Assert.Equal(Syntax.Identifier "x", s0)
+            Assert.Equal(Syntax.Identifier "y", s1)
         | _ -> ()
 
 [<Fact>]
@@ -232,14 +226,10 @@ let ReadInteractive_ListSplitIntoTwoLines() =
     match readInteractive [ "("; ")" ] with
     | None -> Assert.True(false, "Should return Some(objects)")
     | Some objects ->
-        let object = Assert.Single(objects)
-        let list = Assert.IsType<SyntaxList>(object)
-        Assert.Empty(list.Items)
+        let { Syntax = syntax } = Assert.Single(objects)
+        Assert.Equal(Syntax.List [], syntax)
 
 [<Fact>]
 let ReadInteractive_ListStart_NotFinished() =
     let result = readInteractive [ "(" ]
-    Assert.Equal(result, None)
-    match result with
-    | None -> ()
-    | Some _ -> Assert.True(false, "Should return None")
+    Assert.Equal(None, result)

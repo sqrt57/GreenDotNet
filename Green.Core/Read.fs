@@ -5,16 +5,17 @@ open System.Collections.Generic
 open System.Linq
 open System.Collections.ObjectModel
 open System.Text
+open Source
 
 module Read =
 
-    let evalToken (lexeme : string) : struct (TokenType * obj * string) =
+    let evalToken (lexeme : string) : Token =
         let mutable number = 0L
         match lexeme with
-        | "(" -> (TokenType.LeftBracket, null, null)
-        | ")" -> (TokenType.RightBracket, null, null)
-        | _ when Int64.TryParse(lexeme, &number) -> (TokenType.Number, number :> obj, null)
-        | _ -> (TokenType.Identifier, null, lexeme)
+        | "(" -> LeftBracket
+        | ")" -> RightBracket
+        | _ when Int64.TryParse(lexeme, &number) -> Number number
+        | _ -> Token.Identifier lexeme
 
     let scan (source : string) : IEnumerable<struct (string * SyntaxInfo)> =
         let sourceInfo = new SourceInfo(SourceType.String, null)
@@ -51,55 +52,53 @@ module Read =
         }
 
     let rec readList
-            (enumerator : LookAheadEnumerator<struct (TokenType * obj * string * SyntaxInfo)>)
+            (enumerator : LookAheadEnumerator<struct (Token * SyntaxInfo)>)
             (innerList : bool)
-            : ISyntax seq =
+            : SyntaxInfo SyntaxWithInfo seq =
         seq {
             let mutable working = true
             while enumerator.HasNext() && working do
-                let struct (tokenType, value, name, syntaxInfo) = enumerator.Next()
+                let struct (tokenType, syntaxInfo) = enumerator.Next()
                 match tokenType with
-                | TokenType.LeftBracket ->
+                | LeftBracket ->
                     enumerator.Advance();
-                    let sublist = ReadOnlyCollection<ISyntax>((readList enumerator true).ToArray())
+                    let sublist = readList enumerator true |> Seq.toList
 
                     if not (enumerator.HasNext()) then
                         raise (ReaderUnexpectedEof("read: unexpected eof while reading list"))
 
-                    let struct (rightBracketType, _, _, rightSyntaxInfo) = enumerator.Next()
+                    let struct (shouldBeRightBracket, rightSyntaxInfo) = enumerator.Next()
                     enumerator.Advance()
-                    if rightBracketType <> TokenType.RightBracket then
+                    if shouldBeRightBracket <> RightBracket then
                         raise (ReaderException("read: list should end with right bracket"))
 
                     let listSyntaxInfo = SyntaxInfo.FromLeftRight(syntaxInfo, rightSyntaxInfo);
-                    yield SyntaxList(listSyntaxInfo, sublist)
+                    yield { Info = listSyntaxInfo; Syntax = Syntax.List sublist }
 
-                | TokenType.RightBracket ->
+                | RightBracket ->
                     if innerList then
                         working <- false
                     else
                         raise (ReaderException("read: unexpected right bracket"))
 
-                | TokenType.Number ->
+                | Number value ->
                     enumerator.Advance()
-                    yield SyntaxConstant(syntaxInfo, value)
+                    yield { Info = syntaxInfo; Syntax = Syntax.Constant value }
 
-                | TokenType.Identifier ->
+                | Token.Identifier name ->
                     enumerator.Advance()
-                    yield SyntaxIdentifier(syntaxInfo, IdentifierType.Identifier, name)
-
-                | _ -> ()
+                    yield { Info = syntaxInfo; Syntax = Syntax.Identifier name }
         }
 
-    let read (source : string) : IEnumerable<ISyntax> =
+    let read (source : string) : SyntaxInfo SyntaxWithInfo seq =
         let enumerator = LookAhead.Enumerate(
                             (scan source).Select(fun struct (lexeme, syntaxInfo) ->
-                                let struct (tokenType, value, name) = evalToken lexeme
-                                struct (tokenType, value, name, syntaxInfo)
+                                let token = evalToken lexeme
+                                struct (token, syntaxInfo)
                             ))
         readList enumerator false
 
-    type InteractiveReadResult = ISyntax list option
+    type InteractiveReadResult = SyntaxInfo SyntaxWithInfo list option
 
     let readInteractive(lines : IReadOnlyList<string>) : InteractiveReadResult =
         try

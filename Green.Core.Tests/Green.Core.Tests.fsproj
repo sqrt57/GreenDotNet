@@ -9,11 +9,11 @@
 
   <ItemGroup>
     <Compile Include="BytecodeBuilderTests.fs" />
-    <Compile Include="CompilerTests.fs" />
+    <Compile Include="CompileTests.fs" />
     <Compile Include="EvaluatorTests.fs" />
     <Compile Include="InterpreterTests.fs" />
     <Compile Include="LookAheadEnumeratorTests.fs" />
-    <Compile Include="ReaderTests.fs" />
+    <Compile Include="ReadTests.fs" />
     <Compile Include="SourcePositionBuilderTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
