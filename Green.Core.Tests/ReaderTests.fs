@@ -68,58 +68,50 @@ let Read_List() =
 
 [<Fact>]
 let Scan_Empty() =
-    let reader = Reader()
-    let result = reader.Scan("").ToArray()
+    let result = (scan "").ToArray()
     Assert.Empty(result)
 
 [<Fact>]
 let Scan_Whitespace() =
-    let reader = Reader()
-    let result = reader.Scan(" ").ToArray()
+    let result = (scan " ").ToArray()
     Assert.Empty(result)
 
 [<Fact>]
 let Scan_Number_SourceInfo() =
-    let reader = Reader()
-    let result = reader.Scan("15").ToArray()
+    let result = (scan "15").ToArray()
     let struct (_, syntaxInfo) = Assert.Single(result)
     Assert.Equal(SourceType.String, syntaxInfo.Source.Type)
     Assert.Null(syntaxInfo.Source.FileName)
 
 [<Fact>]
 let Scan_Number_SourcePosition() =
-    let reader = Reader()
-    let result = reader.Scan("15").ToArray()
+    let result = (scan "15").ToArray()
     let struct (_, syntaxInfo) = Assert.Single(result)
     Assert.Equal(SourcePosition(0, 0, 0), syntaxInfo.Position)
     Assert.Equal(2, syntaxInfo.Span)
 
 [<Fact>]
 let Scan_Number() =
-    let reader = Reader()
-    let result = reader.Scan("15").ToArray()
+    let result = (scan "15").ToArray()
     let struct (lexeme, _) = Assert.Single(result)
     Assert.Equal("15", lexeme)
 
 [<Fact>]
 let Scan_Identifier() =
-    let reader = Reader()
-    let result = reader.Scan("abc").ToArray()
+    let result = (scan "abc").ToArray()
     let struct (lexeme, _) = Assert.Single(result)
     Assert.Equal("abc", lexeme)
 
 [<Fact>]
 let Scan_Identifier_SourcePosition() =
-    let reader = Reader()
-    let result = reader.Scan("abc").ToArray()
+    let result = (scan "abc").ToArray()
     let struct (_, syntaxInfo) = Assert.Single(result)
     Assert.Equal(SourcePosition(0, 0, 0), syntaxInfo.Position)
     Assert.Equal(3, syntaxInfo.Span)
 
 [<Fact>]
 let Scan_List_SourcePosition() =
-    let reader = Reader()
-    match reader.Scan("(+ 2\n30)").ToArray() with
+    match (scan "(+ 2\n30)").ToArray() with
     | [| (_, si0); (_, si1); (_, si2); (_, si3); (_, si4) |] ->
         Assert.Equal(SourcePosition(0, 0, 0), si0.Position)
         Assert.Equal(1, si0.Span)
@@ -135,8 +127,9 @@ let Scan_List_SourcePosition() =
 
 [<Fact>]
 let Scan_List() =
-    let reader = Reader()
-    match reader.Scan("(+ 2\n30)").ToArray() with
+    let result = (scan "(+ 2\n30)").ToArray()
+    Assert.Equal(5, Array.length result)
+    match result with
     | [| (l0, _); (l1, _); (l2, _); (l3, _); (l4, _) |] ->
         Assert.Equal("(", l0)
         Assert.Equal("+", l1)
@@ -147,42 +140,36 @@ let Scan_List() =
 
 [<Fact>]
 let EvalToken_Number() =
-    let reader = Reader()
-    let struct (tokenType, value, _) = reader.EvalToken("12")
+    let struct (tokenType, value, _) = evalToken "12"
     Assert.Equal(TokenType.Number, tokenType)
     Assert.Equal<obj>(12L, value)
 
 [<Fact>]
 let EvalToken_NegativeNumber() =
-    let reader = Reader()
-    let struct (tokenType, value, _) = reader.EvalToken("-12")
+    let struct (tokenType, value, _) = evalToken "-12"
     Assert.Equal(TokenType.Number, tokenType)
     Assert.Equal<obj>(-12L, value)
 
 [<Fact>]
 let EvalToken_Identifier() =
-    let reader = Reader()
-    let struct (tokenType, _, name) = reader.EvalToken("abc")
+    let struct (tokenType, _, name) = evalToken "abc"
     Assert.Equal(TokenType.Identifier, tokenType)
     Assert.Equal("abc", name)
 
 [<Fact>]
 let EvalToken_Plus_Identifier() =
-    let reader = Reader()
-    let struct (tokenType, _, name) = reader.EvalToken("+")
+    let struct (tokenType, _, name) = evalToken "+"
     Assert.Equal(TokenType.Identifier, tokenType)
     Assert.Equal("+", name)
 
 [<Fact>]
 let EvalToken_LeftBracket() =
-    let reader = Reader()
-    let struct (tokenType, _, _) = reader.EvalToken("(")
+    let struct (tokenType, _, _) = evalToken "("
     Assert.Equal(TokenType.LeftBracket, tokenType)
 
 [<Fact>]
 let EvalToken_RightBracket()=
-    let reader = Reader()
-    let struct (tokenType, _, _) = reader.EvalToken(")")
+    let struct (tokenType, _, _) = evalToken ")"
     Assert.Equal(TokenType.RightBracket, tokenType)
 
 [<Fact>]
