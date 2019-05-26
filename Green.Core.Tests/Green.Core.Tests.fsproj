@@ -14,7 +14,7 @@
     <Compile Include="InterpreterTests.fs" />
     <Compile Include="LookAheadEnumeratorTests.fs" />
     <Compile Include="ReadTests.fs" />
-    <Compile Include="SourcePositionBuilderTests.fs" />
+    <Compile Include="SourceTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

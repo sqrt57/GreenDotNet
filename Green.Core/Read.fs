@@ -3,13 +3,15 @@ namespace Green
 open System
 open System.Collections.Generic
 open System.Linq
-open System.Collections.ObjectModel
 open System.Text
 open Source
+open Source.Range
+open Source.Lex
+open Source.Parse
 
 module Read =
 
-    let evalToken (lexeme : string) : Token =
+    let evalToken (lexeme:string) : Token =
         let mutable number = 0L
         match lexeme with
         | "(" -> LeftBracket
@@ -17,25 +19,23 @@ module Read =
         | _ when Int64.TryParse(lexeme, &number) -> Number number
         | _ -> Token.Identifier lexeme
 
-    let scan (source : string) : IEnumerable<struct (string * SyntaxInfo)> =
-        let sourceInfo = new SourceInfo(SourceType.String, null)
-        let positionBuilder = new SourcePositionBuilder()
+    let scan (source:string) : struct (string*Range) seq =
         let enumerator = LookAhead.Enumerate(source)
+        let mutable pos = Position.zero
 
         seq {
             while enumerator.HasNext() do
                 let c = enumerator.Next()
                 enumerator.Advance();
 
-                let position = positionBuilder.Current
-                positionBuilder.Update(c)
+                let left = pos
+                pos <- Position.update c pos
 
                 match c with
                 | _ when Char.IsWhiteSpace(c) -> ()
-                | '(' -> yield struct ("(", SyntaxInfo.FromBeginSpan(sourceInfo, position, 1))
-                | ')' -> yield struct (")", SyntaxInfo.FromBeginSpan(sourceInfo, position, 1))
+                | '(' -> yield "(", Range.fromPosPos left pos
+                | ')' -> yield ")", Range.fromPosPos left pos
                 | _ ->
-                    let atomPosition = position
                     let atom = StringBuilder()
                     atom.Append(c) |> ignore
                     let mutable working = true
@@ -46,15 +46,15 @@ module Read =
                         | _ when Char.IsWhiteSpace(n) -> working <- false
                         | _ ->
                             atom.Append(n) |> ignore
-                            positionBuilder.Update(n)
+                            pos <- Position.update n pos
                             enumerator.Advance()
-                    yield struct (atom.ToString(), SyntaxInfo.FromBeginEnd(sourceInfo, atomPosition, positionBuilder.Current))
+                    yield atom.ToString(), Range.fromPosPos left pos
         }
 
     let rec readList
-            (enumerator : LookAheadEnumerator<struct (Token * SyntaxInfo)>)
+            (enumerator : LookAheadEnumerator<struct (Token*Range)>)
             (innerList : bool)
-            : SyntaxInfo SyntaxWithInfo seq =
+            : Range SyntaxWithInfo seq =
         seq {
             let mutable working = true
             while enumerator.HasNext() && working do
@@ -72,8 +72,8 @@ module Read =
                     if shouldBeRightBracket <> RightBracket then
                         raise (ReaderException("read: list should end with right bracket"))
 
-                    let listSyntaxInfo = SyntaxInfo.FromLeftRight(syntaxInfo, rightSyntaxInfo);
-                    yield { Info = listSyntaxInfo; Syntax = Syntax.List sublist }
+                    let listSyntaxInfo = Range.combine syntaxInfo rightSyntaxInfo
+                    yield {info=listSyntaxInfo; syntax=Syntax.List sublist}
 
                 | RightBracket ->
                     if innerList then
@@ -83,14 +83,14 @@ module Read =
 
                 | Number value ->
                     enumerator.Advance()
-                    yield { Info = syntaxInfo; Syntax = Syntax.Constant value }
+                    yield {info=syntaxInfo; syntax=Syntax.Constant value}
 
                 | Token.Identifier name ->
                     enumerator.Advance()
-                    yield { Info = syntaxInfo; Syntax = Syntax.Identifier name }
+                    yield {info=syntaxInfo; syntax=Syntax.Identifier name}
         }
 
-    let read (source : string) : SyntaxInfo SyntaxWithInfo seq =
+    let read (source : string) : Range SyntaxWithInfo seq =
         let enumerator = LookAhead.Enumerate(
                             (scan source).Select(fun struct (lexeme, syntaxInfo) ->
                                 let token = evalToken lexeme
@@ -98,7 +98,7 @@ module Read =
                             ))
         readList enumerator false
 
-    type InteractiveReadResult = SyntaxInfo SyntaxWithInfo list option
+    type InteractiveReadResult = Range SyntaxWithInfo list option
 
     let readInteractive(lines : IReadOnlyList<string>) : InteractiveReadResult =
         try

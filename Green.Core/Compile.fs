@@ -1,6 +1,6 @@
 namespace Green
 
-open Source
+open Source.Parse
 
 module Compile =
 
@@ -12,9 +12,9 @@ module Compile =
         let constants = System.Collections.Generic.List<obj>()
         let variables = System.Collections.Generic.List<string>()
 
-        member this.AddCode (code : OpCode) = bytecode.Add(byte code)
+        member this.AddCode (code:OpCode) = bytecode.Add(byte code)
 
-        member this.AddCode (code : byte) = bytecode.Add(code)
+        member this.AddCode (code:byte) = bytecode.Add(code)
 
         member this.AddConstant constant =
             constants.Add(constant)
@@ -29,7 +29,7 @@ module Compile =
                      constants = constants.ToArray(),
                      variables = variables.ToArray())
 
-    let rec compileTo (builder : BytecodeBuilder) { Info = _; Syntax = expr } =
+    let rec compileTo (builder:BytecodeBuilder) {syntax=expr} =
         match expr with
         | Syntax.Constant value ->
             let constIndex = builder.AddConstant(value)
@@ -49,7 +49,7 @@ module Compile =
             builder.AddCode(OpCode.Call1)
             builder.AddCode(byte <| List.length list - 1)
 
-    let compile (expr : 'T SyntaxWithInfo) : Bytecode =
+    let compile (expr: 'T SyntaxWithInfo) : Bytecode =
         let builder = BytecodeBuilder()
         compileTo builder expr
         builder.ToBytecode()
