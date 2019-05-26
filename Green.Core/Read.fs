@@ -19,39 +19,48 @@ module Read =
         | _ when Int64.TryParse(lexeme, &number) -> Number number
         | _ -> Token.Identifier lexeme
 
-    let scan (source:string) : struct (string*Range) seq =
-        let enumerator = LookAhead.Enumerate(source)
-        let mutable pos = Position.zero
+    let rec private scanSymbol pos (enumerator:LookAheadEnumerator<char>) (name:StringBuilder) =
+        if enumerator.HasNext() then
+            let c = enumerator.Next()
+            match c with
+            | '(' | ')' -> pos
+            | _ when Char.IsWhiteSpace(c) -> pos
+            | _ ->
+                name.Append(c) |> ignore
+                enumerator.Advance()
+                scanSymbol (Position.update c pos) enumerator name
+        else
+            pos
 
+    let rec private scanFromPos pos (enumerator:LookAheadEnumerator<char>) : struct (string*Range) seq =
         seq {
-            while enumerator.HasNext() do
+            if enumerator.HasNext() then
                 let c = enumerator.Next()
                 enumerator.Advance();
-
-                let left = pos
-                pos <- Position.update c pos
+                let nextPos = Position.update c pos
 
                 match c with
-                | _ when Char.IsWhiteSpace(c) -> ()
-                | '(' -> yield "(", Range.fromPosPos left pos
-                | ')' -> yield ")", Range.fromPosPos left pos
+                | _ when Char.IsWhiteSpace(c) ->
+                    yield! scanFromPos nextPos enumerator
+                | '(' ->
+                    yield "(", Range.fromPosPos pos nextPos
+                    yield! scanFromPos nextPos enumerator
+                | ')' ->
+                    yield ")", Range.fromPosPos pos nextPos
+                    yield! scanFromPos nextPos enumerator
                 | _ ->
                     let atom = StringBuilder()
                     atom.Append(c) |> ignore
-                    let mutable working = true
-                    while enumerator.HasNext() && working do
-                        let n = enumerator.Next()
-                        match n with
-                        | '(' | ')' -> working <- false
-                        | _ when Char.IsWhiteSpace(n) -> working <- false
-                        | _ ->
-                            atom.Append(n) |> ignore
-                            pos <- Position.update n pos
-                            enumerator.Advance()
-                    yield atom.ToString(), Range.fromPosPos left pos
+                    let endPos = scanSymbol nextPos enumerator atom
+                    yield atom.ToString(), Range.fromPosPos pos endPos
+                    yield! scanFromPos endPos enumerator
         }
 
-    let rec readList
+    let scan (source:string) : struct (string*Range) seq =
+        let enumerator = LookAhead.Enumerate(source)
+        scanFromPos Position.zero enumerator
+
+    let rec private readList
             (enumerator : LookAheadEnumerator<struct (Token*Range)>)
             (innerList : bool)
             : Range SyntaxWithInfo seq =

@@ -8,9 +8,9 @@ module Compile =
 
     type BytecodeBuilder() =
 
-        let bytecode = System.Collections.Generic.List<byte>()
-        let constants = System.Collections.Generic.List<obj>()
-        let variables = System.Collections.Generic.List<string>()
+        let bytecode = ResizeArray<byte>()
+        let constants = ResizeArray<obj>()
+        let variables = ResizeArray<string>()
 
         member this.AddCode (code:OpCode) = bytecode.Add(byte code)
 
