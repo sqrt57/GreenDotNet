@@ -63,10 +63,9 @@ module Read =
     let rec private readList
             (enumerator : LookAheadEnumerator<struct (Token*Range)>)
             (innerList : bool)
-            : Range SyntaxWithInfo seq =
+            : SyntaxWithInfo<Range> seq =
         seq {
-            let mutable working = true
-            while enumerator.HasNext() && working do
+            if enumerator.HasNext() then
                 let struct (tokenType, syntaxInfo) = enumerator.Next()
                 match tokenType with
                 | LeftBracket ->
@@ -77,26 +76,30 @@ module Read =
                         raise (ReaderUnexpectedEof("read: unexpected eof while reading list"))
 
                     let struct (shouldBeRightBracket, rightSyntaxInfo) = enumerator.Next()
-                    enumerator.Advance()
                     if shouldBeRightBracket <> RightBracket then
                         raise (ReaderException("read: list should end with right bracket"))
+                    enumerator.Advance()
 
                     let listSyntaxInfo = Range.combine syntaxInfo rightSyntaxInfo
                     yield {info=listSyntaxInfo; syntax=Syntax.List sublist}
 
+                    yield! readList enumerator innerList
+
                 | RightBracket ->
-                    if innerList then
-                        working <- false
-                    else
+                    if not innerList then
                         raise (ReaderException("read: unexpected right bracket"))
 
                 | Number value ->
                     enumerator.Advance()
                     yield {info=syntaxInfo; syntax=Syntax.Constant value}
 
+                    yield! readList enumerator innerList
+
                 | Token.Identifier name ->
                     enumerator.Advance()
                     yield {info=syntaxInfo; syntax=Syntax.Identifier name}
+
+                    yield! readList enumerator innerList
         }
 
     let read (source : string) : Range SyntaxWithInfo seq =
