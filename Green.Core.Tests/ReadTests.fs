@@ -69,31 +69,39 @@ let Scan_Whitespace() =
 
 [<Fact>]
 let Scan_Number_SourcePosition() =
-    let result = (scan "15").ToArray()
-    let struct (_, syntaxInfo) = Assert.Single(result)
+    let result = scan "15"
+    let (_, syntaxInfo) = Assert.Single(result)
     Assert.Equal({left={pos=0; line=0; col=0}; right={pos=2; line=0; col=2}}, syntaxInfo)
 
 [<Fact>]
 let Scan_Number() =
-    let result = (scan "15").ToArray()
-    let struct (lexeme, _) = Assert.Single(result)
+    let result = scan "15"
+    let (lexeme, _) = Assert.Single(result)
     Assert.Equal("15", lexeme)
 
 [<Fact>]
 let Scan_Identifier() =
-    let result = (scan "abc").ToArray()
-    let struct (lexeme, _) = Assert.Single(result)
+    let result = scan "abc"
+    let (lexeme, _) = Assert.Single(result)
     Assert.Equal("abc", lexeme)
 
 [<Fact>]
 let Scan_Identifier_SourcePosition() =
-    let result = (scan "abc").ToArray()
-    let struct (_, syntaxInfo) = Assert.Single(result)
+    let result = scan "abc"
+    let (_, syntaxInfo) = Assert.Single(result)
     Assert.Equal({left={pos=0; line=0; col=0}; right={pos=3; line=0; col=3}}, syntaxInfo)
 
 [<Fact>]
+let Scan_TwoIdentifiers() =
+    match scan "ab cd" with
+    | [(l0,_); (l1,_)] ->
+        Assert.Equal("ab", l0)
+        Assert.Equal("cd", l1)
+    | _ -> Assert.True(false, "Wrong number of elements in scan result")
+
+[<Fact>]
 let Scan_List_SourcePosition() =
-    match scan "(+ 2\n30)" |> Seq.toList with
+    match scan "(+ 2\n30)" with
     | [(_,si0); (_,si1); (_,si2); (_,si3); (_,si4)] ->
         Assert.Equal({left={pos=0; line=0; col=0}; right={pos=1; line=0; col=1}}, si0)
         Assert.Equal({left={pos=1; line=0; col=1}; right={pos=2; line=0; col=2}}, si1)

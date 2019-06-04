@@ -11,6 +11,39 @@ open Source.Parse
 
 module Read =
 
+    module private Scan =
+
+        open Source.Position
+
+        let rec private scanImpl acc source =
+            match source with
+            | [] -> List.rev acc
+            | (c,_)::rest when Char.IsWhiteSpace(c) -> scanImpl acc rest
+            | ('(',range)::rest -> scanImpl (("(",range)::acc) rest
+            | (')',range)::rest -> scanImpl ((")",range)::acc) rest
+            | (_,{left=left;right=right})::_ -> scanAtom acc source [] left right
+
+        and private scanAtom acc source atomAcc left right =
+            let getAtom() = atomAcc |> List.rev |> List.toArray |> System.String
+            let newAcc() = (getAtom(), {left=left;right=right})::acc
+            let retToImpl() = scanImpl (newAcc()) source
+            match source with
+            | [] -> retToImpl()
+            | (c,_)::_ when Char.IsWhiteSpace(c) -> retToImpl()
+            | ('(',_)::_ | (')',_)::_ -> retToImpl()
+            | (c,{right=newRight})::rest -> scanAtom acc rest (c::atomAcc) left newRight
+
+        let private updatePos (_,{right=prev}) c = (c,{left=prev;right=update c prev})
+
+        let scan (source:string) : (string*Range) list =
+            source
+            |> Seq.scan updatePos ('\000',{left=zero;right=zero})
+            |> Seq.skip 1
+            |> Seq.toList
+            |> scanImpl []
+
+    let scan = Scan.scan
+
     let evalToken (lexeme:string) : Token =
         let mutable number = 0L
         match lexeme with
@@ -18,47 +51,6 @@ module Read =
         | ")" -> RightBracket
         | _ when Int64.TryParse(lexeme, &number) -> Number number
         | _ -> Token.Identifier lexeme
-
-    let rec private scanSymbol pos (enumerator:LookAheadEnumerator<char>) (name:StringBuilder) =
-        if enumerator.HasNext() then
-            let c = enumerator.Next()
-            match c with
-            | '(' | ')' -> pos
-            | _ when Char.IsWhiteSpace(c) -> pos
-            | _ ->
-                name.Append(c) |> ignore
-                enumerator.Advance()
-                scanSymbol (Position.update c pos) enumerator name
-        else
-            pos
-
-    let rec private scanFromPos pos (enumerator:LookAheadEnumerator<char>) : struct (string*Range) seq =
-        seq {
-            if enumerator.HasNext() then
-                let c = enumerator.Next()
-                enumerator.Advance();
-                let nextPos = Position.update c pos
-
-                match c with
-                | _ when Char.IsWhiteSpace(c) ->
-                    yield! scanFromPos nextPos enumerator
-                | '(' ->
-                    yield "(", Range.fromPosPos pos nextPos
-                    yield! scanFromPos nextPos enumerator
-                | ')' ->
-                    yield ")", Range.fromPosPos pos nextPos
-                    yield! scanFromPos nextPos enumerator
-                | _ ->
-                    let atom = StringBuilder()
-                    atom.Append(c) |> ignore
-                    let endPos = scanSymbol nextPos enumerator atom
-                    yield atom.ToString(), Range.fromPosPos pos endPos
-                    yield! scanFromPos endPos enumerator
-        }
-
-    let scan (source:string) : struct (string*Range) seq =
-        let enumerator = LookAhead.Enumerate(source)
-        scanFromPos Position.zero enumerator
 
     let rec private readList
             (enumerator : LookAheadEnumerator<struct (Token*Range)>)
@@ -104,7 +96,7 @@ module Read =
 
     let read (source : string) : Range SyntaxWithInfo seq =
         let enumerator = LookAhead.Enumerate(
-                            (scan source).Select(fun struct (lexeme, syntaxInfo) ->
+                            (scan source).Select(fun (lexeme, syntaxInfo) ->
                                 let token = evalToken lexeme
                                 struct (token, syntaxInfo)
                             ))
