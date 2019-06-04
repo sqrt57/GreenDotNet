@@ -12,7 +12,6 @@
     <Compile Include="CompileTests.fs" />
     <Compile Include="EvaluatorTests.fs" />
     <Compile Include="InterpreterTests.fs" />
-    <Compile Include="LookAheadEnumeratorTests.fs" />
     <Compile Include="ReadTests.fs" />
     <Compile Include="SourceTests.fs" />
     <Compile Include="Program.fs" />
