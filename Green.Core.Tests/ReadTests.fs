@@ -9,53 +9,66 @@ open Green.Read
 
 [<Fact>]
 let Read_Empty() =
-    let result = read ""
-    Assert.Empty(result)
+    match read "" with
+    | Success result -> Assert.Empty(result)
+    | _ -> Assert.True(false, "Should return Success result")
 
 [<Fact>]
 let Read_Atom_SyntaxInfo() =
-    let result = read "58" |> Seq.toList
-    let {info=syntaxInfo} = Assert.Single(result)
-    Assert.Equal({left={pos=0; line=0; col=0}; right={pos=2; line=0; col=2}}, syntaxInfo)
+    match read "58" with
+    | Success result ->
+        let {info=syntaxInfo} = Assert.Single(result)
+        Assert.Equal({left={pos=0; line=0; col=0}; right={pos=2; line=0; col=2}}, syntaxInfo)
+    | _ -> Assert.True(false, "Should return Success result")
 
 [<Fact>]
 let Read_List_SyntaxInfo() =
-    let result = read "(+ 2 3)" |> Seq.toList
-    let {info=syntaxInfo} = Assert.Single(result)
-    Assert.Equal({left={pos=0; line=0; col=0}; right={pos=7; line=0; col=7}}, syntaxInfo)
+    match read "(+ 2 3)" with
+    | Success result ->
+        let {info=syntaxInfo} = Assert.Single(result)
+        Assert.Equal({left={pos=0; line=0; col=0}; right={pos=7; line=0; col=7}}, syntaxInfo)
+    | _ -> Assert.True(false, "Should return Success result")
 
 [<Fact>]
 let Read_Number() =
-    let result = read "5" |> Seq.toList
-    let {syntax=syntax} = Assert.Single(result)
-    Assert.Equal(syntax, Syntax.Constant 5L)
+    match read "5" with
+    | Success result ->
+        let {syntax=syntax} = Assert.Single(result)
+        Assert.Equal(syntax, Syntax.Constant 5L)
+    | _ -> Assert.True(false, "Should return Success result")
 
 [<Fact>]
 let Read_Symbol() =
-    let result = read "x" |> Seq.toList
-    let {syntax=syntax} = Assert.Single(result)
-    Assert.Equal(Syntax.Identifier "x", syntax)
+    match read "x" with
+    | Success result ->
+        let {syntax=syntax} = Assert.Single(result)
+        Assert.Equal(Syntax.Identifier "x", syntax)
+    | _ -> Assert.True(false, "Should return Success result")
 
 [<Fact>]
 let Read_EmptyList() =
-    let result = read "()" |> Seq.toList
-    let {syntax=syntax} = Assert.Single(result)
-    Assert.Equal(Syntax.List [], syntax)
+    match read "()" with
+    | Success result ->
+        let {syntax=syntax} = Assert.Single(result)
+        Assert.Equal(Syntax.List [], syntax)
+    | _ -> Assert.True(false, "Should return Success result")
 
 [<Fact>]
 let Read_List() =
-    let result = read "(+ 2 3)" |> Seq.toList
-    let {syntax=syntax} = Assert.Single(result)
-    match syntax with
-    | Syntax.List list ->
-        Assert.Equal(3, List.length list)
-        match list with
-        | [{syntax=s0}; {syntax=s1}; {syntax=s2}] ->
-            Assert.Equal(Syntax.Identifier "+", s0)
-            Assert.Equal(Syntax.Constant 2L, s1)
-            Assert.Equal(Syntax.Constant 3L, s2)
-        | _ -> ()
-    | _ -> Assert.True(false, "Should return List")
+    match read "(+ 2 3)" with
+    | Success result ->
+        let {syntax=syntax} = Assert.Single(result)
+        match syntax with
+        | Syntax.List list ->
+            Assert.Equal(3, List.length list)
+            match list with
+            | [{syntax=s0}; {syntax=s1}; {syntax=s2}] ->
+                Assert.Equal(Syntax.Identifier "+", s0)
+                Assert.Equal(Syntax.Constant 2L, s1)
+                Assert.Equal(Syntax.Constant 3L, s2)
+            | _ -> ()
+        | _ -> Assert.True(false, "Should return List")
+    | _ -> Assert.True(false, "Should return Success result")
 
 [<Fact>]
 let Scan_Empty() =

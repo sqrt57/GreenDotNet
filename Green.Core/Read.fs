@@ -11,6 +11,14 @@ open Source.Parse
 
 module Read =
 
+    type ReadError(message) =
+        inherit Exception(message)
+
+    type 'x ReadResult =
+        | Success of 'x
+        | UnexpectedEof
+        | UnexpectedRightBr
+
     module private Scan =
 
         open Source.Position
@@ -42,6 +50,25 @@ module Read =
             |> Seq.toList
             |> scanImpl []
 
+    module private ReadList =
+
+        let rec readListImpl contError contEol contRightBr acc tokens =
+            let cont elem rest = readListImpl contError contEol contRightBr (elem::acc) rest
+            let subContEol _ = contError()
+            let subContRightBr left right subList rest = cont {syntax=Syntax.List subList;info=combine left right} rest
+            match tokens with
+            | [] -> contEol (List.rev acc)
+            | (LeftBracket,info)::rest -> readListImpl contError subContEol (subContRightBr info) [] rest
+            | (RightBracket,info)::rest -> contRightBr info (List.rev acc) rest
+            | (Token.Number n,info)::rest -> cont {syntax=Constant n;info=info} rest
+            | (Token.Identifier s,info)::rest -> cont {syntax=Identifier s;info=info} rest
+
+        let readList (tokens:(Token*Range) list) : SyntaxWithInfo<Range> list ReadResult =
+            let contError() = UnexpectedEof
+            let contEol list = Success list
+            let contRightBr _ _ _ = UnexpectedRightBr
+            readListImpl contError contEol contRightBr [] tokens
+
     let scan = Scan.scan
 
     let evalToken (lexeme:string) : Token =
@@ -52,60 +79,18 @@ module Read =
         | _ when Int64.TryParse(lexeme, &number) -> Number number
         | _ -> Token.Identifier lexeme
 
-    let rec private readList
-            (enumerator : LookAheadEnumerator<struct (Token*Range)>)
-            (innerList : bool)
-            : SyntaxWithInfo<Range> seq =
-        seq {
-            if enumerator.HasNext() then
-                let struct (tokenType, syntaxInfo) = enumerator.Next()
-                match tokenType with
-                | LeftBracket ->
-                    enumerator.Advance();
-                    let sublist = readList enumerator true |> Seq.toList
+    let readList = ReadList.readList
 
-                    if not (enumerator.HasNext()) then
-                        raise (ReaderUnexpectedEof("read: unexpected eof while reading list"))
+    let read (source:string) : SyntaxWithInfo<Range> list ReadResult =
+        source
+        |> scan
+        |> List.map (fun (lexeme,info) -> (evalToken lexeme,info))
+        |> readList
 
-                    let struct (shouldBeRightBracket, rightSyntaxInfo) = enumerator.Next()
-                    if shouldBeRightBracket <> RightBracket then
-                        raise (ReaderException("read: list should end with right bracket"))
-                    enumerator.Advance()
-
-                    let listSyntaxInfo = Range.combine syntaxInfo rightSyntaxInfo
-                    yield {info=listSyntaxInfo; syntax=Syntax.List sublist}
-
-                    yield! readList enumerator innerList
-
-                | RightBracket ->
-                    if not innerList then
-                        raise (ReaderException("read: unexpected right bracket"))
-
-                | Number value ->
-                    enumerator.Advance()
-                    yield {info=syntaxInfo; syntax=Syntax.Constant value}
-
-                    yield! readList enumerator innerList
-
-                | Token.Identifier name ->
-                    enumerator.Advance()
-                    yield {info=syntaxInfo; syntax=Syntax.Identifier name}
-
-                    yield! readList enumerator innerList
-        }
-
-    let read (source : string) : Range SyntaxWithInfo seq =
-        let enumerator = LookAhead.Enumerate(
-                            (scan source).Select(fun (lexeme, syntaxInfo) ->
-                                let token = evalToken lexeme
-                                struct (token, syntaxInfo)
-                            ))
-        readList enumerator false
-
-    type InteractiveReadResult = Range SyntaxWithInfo list option
+    type InteractiveReadResult = SyntaxWithInfo<Range> list option
 
     let readInteractive(lines : IReadOnlyList<string>) : InteractiveReadResult =
-        try
-            String.Join("\n", lines) |> read |> Seq.toList |> Some
-        with
-        | :? ReaderUnexpectedEof -> None
+        match String.Join("\n", lines) |> read with
+        | UnexpectedEof -> None
+        | UnexpectedRightBr -> raise (ReadError "Unexpected right bracket")
+        | Success result -> Some result
