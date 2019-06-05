@@ -16,12 +16,8 @@ module Interpreter =
             let bytecode = compile expr
             Evaluator.Eval(mainModule, bytecode)
 
-        member this.EvalSource(source : string) : obj =
+        member this.EvalSource (source:string) : obj =
             match read source with
             | UnexpectedEof -> raise (ReadError "Unexpected end of file")
             | UnexpectedRightBr -> raise (ReadError "Unexpected right bracket")
-            | Success syntax ->
-                let mutable result = null
-                for expr in syntax do
-                    result <- this.Eval expr
-                result
+            | Success syntax -> List.fold (fun _ s -> this.Eval s) null syntax
