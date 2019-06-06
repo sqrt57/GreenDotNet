@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Bytecode.fs" />
     <Compile Include="Source.fs" />
     <Compile Include="Read.fs" />
     <Compile Include="Compile.fs" />

@@ -1,6 +1,7 @@
 namespace Green
 
 open Source.Parse
+open Bytecode
 
 module Compile =
 
@@ -25,9 +26,7 @@ module Compile =
             variables.Count - 1
 
         member this.ToBytecode() =
-            Bytecode(code = bytecode.ToArray(),
-                     constants = constants.ToArray(),
-                     variables = variables.ToArray())
+            BlockCreate.toBlock {bytecode=bytecode; constants=constants; variables=variables}
 
     let rec compileTo (builder:BytecodeBuilder) {syntax=expr} =
         match expr with
@@ -49,7 +48,7 @@ module Compile =
             builder.AddCode(OpCode.Call1)
             builder.AddCode(byte <| List.length list - 1)
 
-    let compile (expr: 'T SyntaxWithInfo) : Bytecode =
+    let compile (expr: 'T SyntaxWithInfo) : Block =
         let builder = BytecodeBuilder()
         compileTo builder expr
         builder.ToBytecode()

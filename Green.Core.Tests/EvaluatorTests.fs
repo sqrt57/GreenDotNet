@@ -2,47 +2,42 @@ module EvaluatorTests
 
 open Xunit
 open Green
+open Bytecode
 
 [<Fact>]
 let Eval_Constant() =
-    let ``module`` = ReadonlyModule(name = "main",
-                                    globals = readOnlyDict["+", Types.GreenFunction(BaseLibrary.Add) :> obj])
-
-    let bytecode = Bytecode(code = [ byte OpCode.Const1; byte 0; ],
-                            constants = [ 3 ],
-                            variables = [])
-
-    let result = Evaluator.Eval(``module``, bytecode)
+    let main = ReadonlyModule(name = "main",
+                              globals = readOnlyDict["+", Types.GreenFunction(BaseLibrary.Add) :> obj])
+    let bytecode = BlockCreate.toBlock {bytecode=[byte OpCode.Const1; byte 0;];
+                                        constants=[3];
+                                        variables=[]}
+    let result = eval main bytecode
 
     Assert.Equal<obj>(3, result)
 
 [<Fact>]
 let Eval_Variable() =
-    let ``module`` = ReadonlyModule(name = "main",
-                                    globals = readOnlyDict["x", 5 :> obj])
-
-    let bytecode = Bytecode(code = [ byte OpCode.Var1; byte 0; ],
-                            constants = [],
-                            variables = [ "x" ])
-
-    let result = Evaluator.Eval(``module``, bytecode)
+    let main = ReadonlyModule(name = "main",
+                              globals = readOnlyDict["x", 5 :> obj])
+    let bytecode = BlockCreate.toBlock {bytecode=[byte OpCode.Var1; byte 0;];
+                                        constants=[];
+                                        variables=["x"]}
+    let result = eval main bytecode
 
     Assert.Equal<obj>(5, result)
 
 [<Fact>]
 let Eval_Call() =
-    let ``module`` = ReadonlyModule(name = "main",
-                                    globals = readOnlyDict["+", Types.GreenFunction(BaseLibrary.Add) :> obj])
-
-    let bytecode = Bytecode(code = [
-                                byte OpCode.Const1; byte 0;
-                                byte OpCode.Const1; byte 1;
-                                byte OpCode.Const1; byte 2;
-                                byte OpCode.Call1; byte 2;
-                            ],
-                            constants = [ Types.GreenFunction(BaseLibrary.Add) :> obj; 2L :> obj; 3L :> obj; ],
-                            variables = [])
-
-    let result = Evaluator.Eval(``module``, bytecode)
+    let main = ReadonlyModule(name = "main",
+                              globals = readOnlyDict["+", Types.GreenFunction(BaseLibrary.Add) :> obj])
+    let bytecode = BlockCreate.toBlock {bytecode=[
+                                            byte OpCode.Const1; byte 0;
+                                            byte OpCode.Const1; byte 1;
+                                            byte OpCode.Const1; byte 2;
+                                            byte OpCode.Call1; byte 2;
+                                        ];
+                                        constants=[Types.GreenFunction(BaseLibrary.Add) :> obj; 2L :> obj; 3L :> obj;];
+                                        variables=[]}
+    let result = eval main bytecode
 
     Assert.Equal<obj>(5L, result)

@@ -2,6 +2,7 @@ namespace Green
 
 open Read
 open Compile
+open Bytecode
 
 module Interpreter =
 
@@ -13,8 +14,8 @@ module Interpreter =
                                                   ]) :> IModule
 
         member this.Eval expr : obj =
-            let bytecode = compile expr
-            Evaluator.Eval(mainModule, bytecode)
+            let block = compile expr
+            eval mainModule block
 
         member this.EvalSource (source:string) : obj =
             match read source with
