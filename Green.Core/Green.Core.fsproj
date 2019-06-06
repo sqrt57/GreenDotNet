@@ -5,16 +5,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Types.fs" />
+    <Compile Include="Lib.fs" />
     <Compile Include="Bytecode.fs" />
     <Compile Include="Source.fs" />
     <Compile Include="Read.fs" />
     <Compile Include="Compile.fs" />
     <Compile Include="Interpreter.fs" />
     <None Include="Explore.fsx" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Green.CoreCS\Green.CoreCS.csproj" />
   </ItemGroup>
 
 </Project>

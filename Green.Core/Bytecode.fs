@@ -25,7 +25,7 @@ module Bytecode =
         let ofBlock ({bytecode=bytecode;constants=constants;variables=variables}:Block) : BlockCreate =
             {bytecode=Array.copy bytecode;constants=Array.copy constants;variables=Array.copy variables}
 
-    let eval (main:IModule) (bytecode:Block) =
+    let eval (main:Module) (bytecode:Block) =
         let stack = System.Collections.Generic.Stack<obj>()
         let mutable ip = 0
         while ip < Array.length bytecode.bytecode do
@@ -41,16 +41,17 @@ module Bytecode =
                 let index = bytecode.bytecode.[ip]
                 ip <- ip + 1
                 let variable = bytecode.variables.[int index]
-                let value = main.Globals.[variable]
-                stack.Push value
+                match Map.tryFind variable main.globals with
+                | None -> raise (RuntimeException(sprintf "eval: Variable '%s' not found in globals" variable))
+                | Some value -> stack.Push value
             | OpCode.Call1 ->
                 let argsCount = bytecode.bytecode.[ip]
                 ip <- ip + 1
                 let args = Array.create<obj> (int argsCount) 0
                 for i = (int argsCount) - 1 downto 0 do
                     args.[i] <- stack.Pop()
-                let func = stack.Pop() :?> Types.GreenFunction
-                stack.Push <| func.Invoke args
+                let func = stack.Pop() :?> Func
+                stack.Push <| func args
             | _ -> raise (RuntimeException(sprintf "eval: unknown bytecode %A" op))
 
         if stack.Count = 0 then

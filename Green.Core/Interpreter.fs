@@ -8,10 +8,11 @@ module Interpreter =
 
     type Interpreter() =
 
-        let mainModule : IModule = ReadonlyModule(name = "main",
-                                                  globals = readOnlyDict[
-                                                      "+", Types.GreenFunction(BaseLibrary.Add) :> obj;
-                                                  ]) :> IModule
+        let mainModule:Module = {
+            name="main";
+            globals = Map.ofList [
+                "+", Base.add :> obj;
+            ]}
 
         member this.Eval expr : obj =
             let block = compile expr
