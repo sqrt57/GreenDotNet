@@ -15,8 +15,9 @@ module Interpreter =
             ]}
 
         member this.Eval expr : obj =
-            let block = compile expr
-            eval mainModule block
+            match compile expr with
+            | None -> "Some error in compiler" :> obj
+            | Some block -> eval mainModule block
 
         member this.EvalSource (source:string) : obj =
             match read source with

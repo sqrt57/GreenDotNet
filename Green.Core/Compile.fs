@@ -1,54 +1,133 @@
 namespace Green
 
+open Maybe
 open Source.Parse
 open Bytecode
 
 module Compile =
 
-    exception CompileException of string
+    type CodeBlock<'constInfo,'varInfo> =
+        | Const of 'constInfo * obj
+        | VarRef of 'varInfo * string
+        | Call of func : CodeBlock<'constInfo,'varInfo> * args : CodeBlock<'constInfo,'varInfo> list
 
-    type BytecodeBuilder() =
+    module CodeBlock =
 
-        let bytecode = ResizeArray<byte>()
-        let constants = ResizeArray<obj>()
-        let variables = ResizeArray<string>()
+        type Cata<'constInfo,'varInfo,'result> =
+            abstract member cConst : info:'constInfo -> constant:obj -> 'result
+            abstract member cVarRef : info:'varInfo -> name:string -> 'result
+            abstract member cCall : func:'result -> args:'result list -> 'result
 
-        member this.AddCode (code:OpCode) = bytecode.Add(byte code)
+        let rec cata (c:Cata<'a,'b,'r>) (block:CodeBlock<'a,'b>) : 'r =
+            let recurse = cata c
+            match block with
+            | Const (x,y) -> c.cConst x y
+            | VarRef (x,y) -> c.cVarRef x y
+            | Call (func=funcBlock; args=argsBlocks) ->
+                let func = recurse funcBlock
+                let args = List.map recurse argsBlocks
+                c.cCall func args
 
-        member this.AddCode (code:byte) = bytecode.Add(code)
+        type Fold<'constInfo,'varInfo,'acc> =
+            abstract member fConst : acc:'acc -> info:'constInfo -> constant:obj -> 'acc
+            abstract member fVarRef : acc:'acc -> info:'varInfo -> name:string -> 'acc
+            abstract member fPreCall : acc:'acc -> 'acc
+            abstract member fPostCallFunc : acc:'acc -> 'acc
+            abstract member fPostCallArgs : acc:'acc -> 'acc
 
-        member this.AddConstant constant =
-            constants.Add(constant)
-            constants.Count - 1
+        let rec fold (f : Fold<'a,'b,'acc>) (acc : 'acc) (block : CodeBlock<'a,'b>) : 'acc =
+            let recurse = fold f
+            match block with
+            | Const (x,y) -> f.fConst acc x y
+            | VarRef (x,y) -> f.fVarRef acc x y
+            | Call (func=funcBlock; args=argBlocks) ->
+                acc
+                |> f.fPreCall
+                |> fun acc -> recurse acc funcBlock
+                |> f.fPostCallFunc
+                |> fun acc -> List.fold recurse acc argBlocks
+                |> f.fPostCallArgs
 
-        member this.AddVariable name =
-            variables.Add(name)
-            variables.Count - 1
+        type CataFold<'constInfo,'varInfo,'acc,'result> =
+            abstract member fConst : acc:'acc -> info:'constInfo -> constant:obj -> 'acc * 'result
+            abstract member fVarRef : acc:'acc -> info:'varInfo -> name:string -> 'acc * 'result
+            abstract member fPreCall : acc:'acc -> 'acc
+            abstract member fPostCallFunc : acc:'acc -> func:'result -> 'acc
+            abstract member fPostCallArgs : acc:'acc -> func:'result -> args:'result list -> 'acc * 'result
 
-        member this.ToBytecode() =
-            BlockCreate.toBlock {bytecode=bytecode; constants=constants; variables=variables}
+        let rec cataFold (f : CataFold<'a,'b,'acc,'result>) (acc : 'acc) (block : CodeBlock<'a,'b>) : 'acc * 'result =
 
-    let rec compileTo (builder:BytecodeBuilder) {syntax=expr} =
-        match expr with
-        | Syntax.Constant value ->
-            let constIndex = builder.AddConstant(value)
-            builder.AddCode(OpCode.Const1)
-            builder.AddCode(byte constIndex)
+            let recurse = cataFold f
 
-        | Syntax.Identifier name ->
-            let varIndex = builder.AddVariable(name)
-            builder.AddCode(OpCode.Var1)
-            builder.AddCode(byte varIndex)
+            match block with
+            | Const (x,y) -> f.fConst acc x y
+            | VarRef (x,y) -> f.fVarRef acc x y
+            | Call (func=funcBlock; args=argBlocks) ->
 
-        | Syntax.List list ->
-            if List.isEmpty list then
-                raise <| CompileException "compile: cannot compile empty application: ()"
-            for subExpr in list do
-                compileTo builder subExpr
-            builder.AddCode(OpCode.Call1)
-            builder.AddCode(byte <| List.length list - 1)
+                let argFolder (acc,argsAcc) arg =
+                    let acc,arg = recurse acc arg
+                    (acc,arg::argsAcc)
 
-    let compile (expr: 'T SyntaxWithInfo) : Block =
-        let builder = BytecodeBuilder()
-        compileTo builder expr
-        builder.ToBytecode()
+                let acc = f.fPreCall acc
+                let acc,func = recurse acc funcBlock
+                let acc = f.fPostCallFunc acc func
+                let acc,argsAcc = List.fold argFolder (acc,[]) argBlocks
+                let args = List.rev argsAcc
+                f.fPostCallArgs acc func args
+
+    let rec syntaxToBlocks ({syntax=syntax} : 't SyntaxWithInfo) : CodeBlock<unit,unit> option =
+        match syntax with
+        | Syntax.Constant value -> Some <| Const ((), value)
+        | Syntax.Identifier name -> Some <| VarRef ((), name)
+        | Syntax.List [] -> None
+        | Syntax.List (func::args) -> maybe {
+            let! funcBlock = syntaxToBlocks func
+            let! argsBlocks = List.traverseOption syntaxToBlocks args
+            return Call (func=funcBlock, args=argsBlocks)
+        }
+
+    let extractConstants (combine:'a->int->'a1) (block:CodeBlock<'a,'b>) : CodeBlock<'a1,'b> * obj seq =
+        let folder = {
+            new CodeBlock.CataFold<'a, 'b, int * obj list, CodeBlock<'a1,'b>> with
+                member __.fConst ((num, objAcc)) info constant = (num+1, constant::objAcc), Const (combine info num, obj)
+                member __.fVarRef acc info name = acc, VarRef (info, name)
+                member __.fPreCall acc = acc
+                member __.fPostCallFunc acc _ = acc
+                member __.fPostCallArgs acc func args = acc, Call (func=func,args=args) }
+        let (_num,constsAcc),result = CodeBlock.cataFold folder (0,[]) block
+        result, (constsAcc |> List.rev |> List.toSeq)
+
+    let extractVariables (combine:'b->int->'b1) (block:CodeBlock<'a,'b>) : CodeBlock<'a,'b1> * string seq =
+        let folder = {
+            new CodeBlock.CataFold<'a, 'b, int * string list, CodeBlock<'a,'b1>> with
+                member __.fConst acc info constant = acc, Const (info, constant)
+                member __.fVarRef ((num,nameAcc)) info name = (num+1, name::nameAcc), VarRef (combine info num, name)
+                member __.fPreCall acc = acc
+                member __.fPostCallFunc acc _ = acc
+                member __.fPostCallArgs acc func args = acc, Call (func=func,args=args) }
+        let (_num,constsAcc),result = CodeBlock.cataFold folder (0,[]) block
+        result, (constsAcc |> List.rev |> List.toSeq)
+
+    let extractBytecode (block:CodeBlock<int,int>) : byte seq =
+        let c = {
+            new CodeBlock.Cata<int, int, byte seq> with
+                member __.cConst index _constant = seq [byte OpCode.Const1; byte index]
+                member __.cVarRef index _name = seq [byte OpCode.Var1; byte index]
+                member __.cCall func args =
+                    seq {
+                        yield! func
+                        for arg in args do
+                            yield! arg
+                        yield byte OpCode.Call1
+                        yield byte <| List.length args
+                    } }
+        CodeBlock.cata c block
+
+    let compile (expr: 'T SyntaxWithInfo) : Block option =
+        maybe {
+            let! block = syntaxToBlocks expr
+            let block,constants = extractConstants (fun () num -> num) block
+            let block,variables = extractVariables (fun () num -> num) block
+            let bytecode = extractBytecode block
+            return BlockCreate.toBlock {bytecode=bytecode; constants=constants; variables=variables}
+        }
