@@ -3,12 +3,13 @@ module EvaluatorTests
 open Xunit
 open Green
 open Bytecode
+open Module
 
 [<Fact>]
 let Eval_Constant() =
     let main:Module = {
         name="main";
-        globals = Map.empty;
+        bindings = Map.empty;
     }
     let bytecode = BlockCreate.toBlock {
         bytecode=[byte OpCode.Const1; byte 0;];
@@ -23,8 +24,8 @@ let Eval_Constant() =
 let Eval_Variable() =
     let main:Module = {
         name="main";
-        globals = Map.ofList [
-            "x", 5 :> obj;
+        bindings = Map.ofList [
+            "x", 5 :> obj |> Cell.cell
         ]
     }
     let bytecode = BlockCreate.toBlock {
@@ -40,7 +41,7 @@ let Eval_Variable() =
 let Eval_Call() =
     let main:Module = {
         name="main";
-        globals = Map.empty
+        bindings = Map.empty
     }
     let bytecode = BlockCreate.toBlock {
         bytecode=[

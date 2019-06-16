@@ -1,5 +1,7 @@
 namespace Green
 
+open Module
+
 module Bytecode =
 
     type OpCode =
@@ -25,7 +27,7 @@ module Bytecode =
         let ofBlock ({bytecode=bytecode;constants=constants;variables=variables}:Block) : BlockCreate =
             {bytecode=Array.copy bytecode;constants=Array.copy constants;variables=Array.copy variables}
 
-    let eval (main:Module) (bytecode:Block) =
+    let eval (main:IModule) (bytecode:Block) =
         let stack = System.Collections.Generic.Stack<obj>()
         let mutable ip = 0
         while ip < Array.length bytecode.bytecode do
@@ -41,9 +43,9 @@ module Bytecode =
                 let index = bytecode.bytecode.[ip]
                 ip <- ip + 1
                 let variable = bytecode.variables.[int index]
-                match Map.tryFind variable main.globals with
+                match main.tryGetBinding variable with
                 | None -> raise (RuntimeException(sprintf "eval: Variable '%s' not found in globals" variable))
-                | Some value -> stack.Push value
+                | Some cell -> stack.Push cell.value
             | OpCode.Call1 ->
                 let argsCount = bytecode.bytecode.[ip]
                 ip <- ip + 1

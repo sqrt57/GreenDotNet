@@ -3,16 +3,20 @@ namespace Green
 open Read
 open Compile
 open Bytecode
+open Module
 
 module Interpreter =
 
     type Interpreter() =
 
-        let mainModule:Module = {
-            name="main";
-            globals = Map.ofList [
-                "+", Base.add :> obj;
+        let libModule:Module = {
+            name="lib"
+            bindings = Map.ofList [
+                "+", Base.add :> obj |> Cell.cell
             ]}
+
+        let mainModule:GreenModule = GreenModule.empty "main"
+        do GreenModule.tryImport mainModule "+" libModule "+" |> ignore
 
         member this.Eval expr : obj =
             match compile expr with
