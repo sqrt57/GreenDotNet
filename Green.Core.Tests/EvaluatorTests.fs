@@ -4,6 +4,7 @@ open Xunit
 open Green
 open Bytecode
 open Module
+open Obj
 
 [<Fact>]
 let Eval_Constant() =
@@ -13,19 +14,19 @@ let Eval_Constant() =
     }
     let bytecode = BlockCreate.toBlock {
         bytecode=[byte OpCode.Const1; byte 0;];
-        constants=[3];
+        constants=[Value.ofInt 3L];
         variables=[];
     }
     let result = eval main bytecode
 
-    Assert.Equal<obj>(3, result)
+    Assert.Equal(Value.ofInt 3L, result)
 
 [<Fact>]
 let Eval_Variable() =
     let main:Module = {
         name="main";
         bindings = Map.ofList [
-            "x", 5 :> obj |> Cell.cell
+            "x", 5L |> Value.ofInt |> Cell.cell
         ]
     }
     let bytecode = BlockCreate.toBlock {
@@ -35,7 +36,7 @@ let Eval_Variable() =
     }
     let result = eval main bytecode
 
-    Assert.Equal<obj>(5, result)
+    Assert.Equal(Value.ofInt 5L, result)
 
 [<Fact>]
 let Eval_Call() =
@@ -50,9 +51,9 @@ let Eval_Call() =
             byte OpCode.Const1; byte 2;
             byte OpCode.Call1; byte 2;
         ];
-        constants=[Base.add :> obj; 2L :> obj; 3L :> obj;];
+        constants=[Value.ofFun Base.add; Value.ofInt 2L; Value.ofInt 3L;];
         variables=[];
     }
     let result = eval main bytecode
 
-    Assert.Equal<obj>(5L, result)
+    Assert.Equal(Value.ofInt 5L, result)

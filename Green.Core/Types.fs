@@ -2,9 +2,44 @@ namespace Green
 
 type RuntimeException(message) = inherit System.Exception(message)
 
-type Func = obj array -> obj
+module Obj =
+
+    [<StructuralEquality;StructuralComparison>]
+    type Value =
+        | Unit
+        | Int of int64
+        | U of UValue
+
+    and [<Struct;CustomEquality;CustomComparison>]
+        UValue =
+        | Fun of (Value array -> Value)
+
+        override __.Equals _ = false
+        override __.GetHashCode() = 0
+        interface System.IComparable with
+            member __.CompareTo _ = failwith "not comparable"
+
+
+    let (|Fun|_|) x =
+        match x with
+        | U (Fun f) -> Some f
+        | _ -> None
+
+    module Value =
+
+        let empty = Unit
+
+        let ofInt x = Int x
+
+        let ofFun f = U <| Fun f
+
+        let isUnit = function
+            | Unit -> true
+            | _ -> false
 
 module Module =
+
+    open Obj
 
     type ICell<'a> =
         abstract member value: 'a
@@ -24,18 +59,18 @@ module Module =
 
     type IModule =
         abstract member name: string
-        abstract member tryGetBinding: name:string -> obj ICell option
+        abstract member tryGetBinding: name:string -> Value ICell option
 
     type Module =
         { name: string
-          bindings: Map<string, obj ICell> }
+          bindings: Map<string, Value ICell> }
         interface IModule with
             member this.name with get() = this.name
             member this.tryGetBinding name = Map.tryFind name this.bindings
 
     type GreenCell =
-        | Define of cell: MutableCell<obj>
-        | Import of source: IModule * cell: ICell<obj>
+        | Define of cell: MutableCell<Value>
+        | Import of source: IModule * cell: ICell<Value>
 
     type GreenModule =
         private {
@@ -46,7 +81,7 @@ module Module =
             member this.tryGetBinding name =
                 match Map.tryFind name this.bindings with
                 | None -> None
-                | Some (Define cell) -> cell :> obj ICell |> Some
+                | Some (Define cell) -> cell :> Value ICell |> Some
                 | Some (Import (_, cell)) -> cell |> Some
 
     module GreenModule =
@@ -67,26 +102,26 @@ module Module =
                     target.bindings <- Map.add targetName newCell target.bindings
                     Success newCell
 
-        let tryGetDefine (name: string) (greenModule: GreenModule) : MutableCell<obj> option =
+        let tryGetDefine (name: string) (greenModule: GreenModule) : MutableCell<Value> option =
             match Map.tryFind name greenModule.bindings with
             | None -> None
             | Some (Define cell) -> Some cell
             | Some (Import _) -> None
 
-        let tryGetValue (name: string) (greenModule: GreenModule) : obj option =
+        let tryGetValue (name: string) (greenModule: GreenModule) : Value option =
             match Map.tryFind name greenModule.bindings with
             | None -> None
             | Some (Define cell) -> Some cell.value
             | Some (Import (_, cell)) -> Some cell.value
 
-        let trySetValue (name: string) (greenModule: GreenModule) (value: obj) : bool =
+        let trySetValue (name: string) (greenModule: GreenModule) (value: Value) : bool =
             match tryGetDefine name greenModule with
             | None -> false
             | Some cell ->
                 cell.value <- value
                 true
 
-        let tryAddBinding (name: string) (greenModule: GreenModule) (value: obj) : MutableCell<obj> option =
+        let tryAddBinding (name: string) (greenModule: GreenModule) (value: Value) : MutableCell<Value> option =
             if Map.containsKey name greenModule.bindings then
                 None
             else

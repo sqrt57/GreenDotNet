@@ -2,8 +2,7 @@ namespace Green
 
 open System
 open System.Collections.Generic
-open System.Linq
-open System.Text
+open Obj
 open Source
 open Source.Range
 open Source.Lex
@@ -60,7 +59,7 @@ module Read =
             | [] -> contEol (List.rev acc)
             | (LeftBracket,info)::rest -> readListImpl contError subContEol (subContRightBr info) [] rest
             | (RightBracket,info)::rest -> contRightBr info (List.rev acc) rest
-            | (Token.Number n,info)::rest -> cont {syntax=Constant n;info=info} rest
+            | (Token.Number n,info)::rest -> cont {syntax=Constant (Value.ofInt n);info=info} rest
             | (Token.Identifier s,info)::rest -> cont {syntax=Identifier s;info=info} rest
 
         let readList (tokens:(Token*Range) list) : SyntaxWithInfo<Range> list ReadResult =

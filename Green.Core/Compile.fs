@@ -1,5 +1,6 @@
 namespace Green
 
+open Obj
 open Maybe
 open Source.Parse
 open Bytecode
@@ -7,14 +8,14 @@ open Bytecode
 module Compile =
 
     type CodeBlock<'constInfo,'varInfo> =
-        | Const of 'constInfo * obj
+        | Const of 'constInfo * Value
         | VarRef of 'varInfo * string
         | Call of func : CodeBlock<'constInfo,'varInfo> * args : CodeBlock<'constInfo,'varInfo> list
 
     module CodeBlock =
 
         type Cata<'constInfo,'varInfo,'result> =
-            abstract member cConst : info:'constInfo -> constant:obj -> 'result
+            abstract member cConst : info:'constInfo -> constant:Value -> 'result
             abstract member cVarRef : info:'varInfo -> name:string -> 'result
             abstract member cCall : func:'result -> args:'result list -> 'result
 
@@ -29,7 +30,7 @@ module Compile =
                 c.cCall func args
 
         type Fold<'constInfo,'varInfo,'acc> =
-            abstract member fConst : acc:'acc -> info:'constInfo -> constant:obj -> 'acc
+            abstract member fConst : acc:'acc -> info:'constInfo -> constant:Value -> 'acc
             abstract member fVarRef : acc:'acc -> info:'varInfo -> name:string -> 'acc
             abstract member fPreCall : acc:'acc -> 'acc
             abstract member fPostCallFunc : acc:'acc -> 'acc
@@ -49,7 +50,7 @@ module Compile =
                 |> f.fPostCallArgs
 
         type CataFold<'constInfo,'varInfo,'acc,'result> =
-            abstract member fConst : acc:'acc -> info:'constInfo -> constant:obj -> 'acc * 'result
+            abstract member fConst : acc:'acc -> info:'constInfo -> constant:Value -> 'acc * 'result
             abstract member fVarRef : acc:'acc -> info:'varInfo -> name:string -> 'acc * 'result
             abstract member fPreCall : acc:'acc -> 'acc
             abstract member fPostCallFunc : acc:'acc -> func:'result -> 'acc
@@ -86,10 +87,10 @@ module Compile =
             return Call (func=funcBlock, args=argsBlocks)
         }
 
-    let extractConstants (combine:'a->int->'a1) (block:CodeBlock<'a,'b>) : CodeBlock<'a1,'b> * obj seq =
+    let extractConstants (combine:'a->int->'a1) (block:CodeBlock<'a,'b>) : CodeBlock<'a1,'b> * Value seq =
         let folder = {
-            new CodeBlock.CataFold<'a, 'b, int * obj list, CodeBlock<'a1,'b>> with
-                member __.fConst ((num, objAcc)) info constant = (num+1, constant::objAcc), Const (combine info num, obj)
+            new CodeBlock.CataFold<'a, 'b, int * Value list, CodeBlock<'a1,'b>> with
+                member __.fConst ((num, objAcc)) info constant = (num+1, constant::objAcc), Const (combine info num, constant)
                 member __.fVarRef acc info name = acc, VarRef (info, name)
                 member __.fPreCall acc = acc
                 member __.fPostCallFunc acc _ = acc

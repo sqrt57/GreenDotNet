@@ -6,6 +6,7 @@ open Green.Source
 open Green.Source.Lex
 open Green.Source.Parse
 open Green.Read
+open Green.Obj
 
 [<Fact>]
 let Read_Empty() =
@@ -34,7 +35,7 @@ let Read_Number() =
     match read "5" with
     | Success result ->
         let {syntax=syntax} = Assert.Single(result)
-        Assert.Equal(syntax, Syntax.Constant 5L)
+        Assert.Equal(syntax, Syntax.Constant <| Value.ofInt 5L)
     | _ -> Assert.True(false, "Should return Success result")
 
 [<Fact>]
@@ -64,8 +65,8 @@ let Read_List() =
             match list with
             | [{syntax=s0}; {syntax=s1}; {syntax=s2}] ->
                 Assert.Equal(Syntax.Identifier "+", s0)
-                Assert.Equal(Syntax.Constant 2L, s1)
-                Assert.Equal(Syntax.Constant 3L, s2)
+                Assert.Equal(Syntax.Constant <| Value.ofInt 2L, s1)
+                Assert.Equal(Syntax.Constant <| Value.ofInt 3L, s2)
             | _ -> ()
         | _ -> Assert.True(false, "Should return List")
     | _ -> Assert.True(false, "Should return Success result")
@@ -139,25 +140,25 @@ let Scan_List() =
 [<Fact>]
 let EvalToken_Number() =
     match evalToken "12" with
-    | Number value -> Assert.Equal<obj>(12L, value)
+    | Number value -> Assert.Equal(12L, value)
     | _ -> Assert.True(false, "Should return Number")
 
 [<Fact>]
 let EvalToken_NegativeNumber() =
     match evalToken "-12" with
-    | Number value -> Assert.Equal<obj>(-12L, value)
+    | Number value -> Assert.Equal(-12L, value)
     | _ -> Assert.True(false, "Should return Number")
 
 [<Fact>]
 let EvalToken_Identifier() =
     match evalToken "abc" with
-    | Token.Identifier value -> Assert.Equal<obj>("abc", value)
+    | Token.Identifier value -> Assert.Equal("abc", value)
     | _ -> Assert.True(false, "Should return Identifier")
 
 [<Fact>]
 let EvalToken_Plus_Identifier() =
     match evalToken "+" with
-    | Token.Identifier value -> Assert.Equal<obj>("+", value)
+    | Token.Identifier value -> Assert.Equal("+", value)
     | _ -> Assert.True(false, "Should return Identifier")
 
 [<Fact>]
@@ -166,7 +167,7 @@ let EvalToken_LeftBracket() =
     Assert.Equal(LeftBracket, token)
 
 [<Fact>]
-let EvalToken_RightBracket()=
+let EvalToken_RightBracket() =
     let token = evalToken ")"
     Assert.Equal(RightBracket, token)
 

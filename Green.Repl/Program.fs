@@ -2,17 +2,17 @@ module Green.Repl
 
 open System
 open System.Collections.Generic
-open Green.Read
-open Green.Interpreter
+open Read
+open Interpreter
+open Obj
 
 let eval (interpreter : Interpreter) objects =
-    let results = List<obj>()
+    let results = List<Value>()
 
     for o in objects do
         let result = interpreter.Eval o
-        match result with
-        | null -> ()
-        | result -> results.Add result
+        if not (Value.isUnit result) then
+            results.Add result
 
     for result in results do
         printfn "%A" result

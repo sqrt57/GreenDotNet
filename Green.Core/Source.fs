@@ -1,5 +1,6 @@
 namespace Green
 
+open Obj
 open System
 
 module Source =
@@ -47,5 +48,5 @@ module Source =
 
         and 'T Syntax =
             | List of 'T SyntaxWithInfo list
-            | Constant of obj
+            | Constant of Value
             | Identifier of string

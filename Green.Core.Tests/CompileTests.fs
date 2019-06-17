@@ -5,16 +5,17 @@ open Green
 open Green.Source.Parse
 open Green.Compile
 open Green.Bytecode
+open Green.Obj
 
 [<Fact>]
 let Compile_Constant() =
-    let expr = {info=null; syntax=Constant 5L}
+    let expr = {info=null; syntax=Constant <| Value.ofInt 5L}
     match compile expr with
     | None -> Assert.True(false, "Should return Some block")
     | Some block ->
         let block = BlockCreate.ofBlock block
         Assert.Equal([|byte OpCode.Const1; byte 0|], block.bytecode)
-        Assert.Equal<obj>([|5L|], block.constants)
+        Assert.Equal([|Value.ofInt 5L|], block.constants)
 
 [<Fact>]
 let Compile_Variable() =
@@ -30,8 +31,8 @@ let Compile_Variable() =
 let Compile_Call() =
     let expr = {info=null; syntax=List [
         {info=null; syntax=Identifier "+"};
-        {info=null; syntax=Constant 1};
-        {info=null; syntax=Constant 2};
+        {info=null; syntax=Constant <| Value.ofInt 1L};
+        {info=null; syntax=Constant <| Value.ofInt 2L};
     ]}
     match compile expr with
     | None -> Assert.True(false, "Should return Some block")
@@ -45,5 +46,5 @@ let Compile_Call() =
                 byte OpCode.Call1; byte 2;
             |],
             block.bytecode)
-        Assert.Equal<obj>([|1; 2|], block.constants)
+        Assert.Equal([|Value.ofInt 1L; Value.ofInt 2L|], block.constants)
         Assert.Equal([|"+"|], block.variables)

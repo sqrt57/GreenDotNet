@@ -1,5 +1,6 @@
 namespace Green
 
+open Obj
 open Module
 
 module Bytecode =
@@ -11,13 +12,13 @@ module Bytecode =
 
     type Block = private {
         bytecode : byte array
-        constants : obj array
+        constants : Value array
         variables : string array
     }
 
     type BlockCreate = {
         bytecode : byte seq
-        constants : obj seq
+        constants : Value seq
         variables : string seq
     }
 
@@ -28,7 +29,7 @@ module Bytecode =
             {bytecode=Array.copy bytecode;constants=Array.copy constants;variables=Array.copy variables}
 
     let eval (main:IModule) (bytecode:Block) =
-        let stack = System.Collections.Generic.Stack<obj>()
+        let stack = System.Collections.Generic.Stack<Value>()
         let mutable ip = 0
         while ip < Array.length bytecode.bytecode do
             let op : OpCode = LanguagePrimitives.EnumOfValue bytecode.bytecode.[ip]
@@ -49,11 +50,13 @@ module Bytecode =
             | OpCode.Call1 ->
                 let argsCount = bytecode.bytecode.[ip]
                 ip <- ip + 1
-                let args = Array.create<obj> (int argsCount) 0
+                let args = Array.create<Value> (int argsCount) Value.empty
                 for i = (int argsCount) - 1 downto 0 do
                     args.[i] <- stack.Pop()
-                let func = stack.Pop() :?> Func
-                stack.Push <| func args
+                match stack.Pop() with
+                | Fun func ->
+                    stack.Push <| func args
+                | _ -> raise (RuntimeException <| sprintf "Cannot execute as function")
             | _ -> raise (RuntimeException(sprintf "eval: unknown bytecode %A" op))
 
         if stack.Count = 0 then
