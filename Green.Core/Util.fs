@@ -23,7 +23,3 @@ module List =
                 | None -> None
 
         traverseInternal f list []
-
-type Result<'result,'error> =
-    | Success of 'result
-    | Error of 'error

@@ -100,7 +100,7 @@ module Module =
                 else
                     let newCell = Import (source, cell)
                     target.bindings <- Map.add targetName newCell target.bindings
-                    Success newCell
+                    Ok newCell
 
         let tryGetDefine (name: string) (greenModule: GreenModule) : MutableCell<Value> option =
             match Map.tryFind name greenModule.bindings with
