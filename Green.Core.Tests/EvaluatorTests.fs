@@ -51,7 +51,7 @@ let Eval_Call() =
             byte OpCode.Const1; byte 2;
             byte OpCode.Call1; byte 2;
         ];
-        constants=[Value.ofFun Base.add; Value.ofInt 2L; Value.ofInt 3L;];
+        constants=[Value.ofFun Prelude.add; Value.ofInt 2L; Value.ofInt 3L;];
         variables=[];
     }
     let result = eval main bytecode

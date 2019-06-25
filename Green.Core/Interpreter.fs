@@ -10,16 +10,10 @@ module Interpreter =
 
     type Interpreter() =
 
-        let libModule:Module = {
-            name="lib"
-            bindings = Map.ofList [
-                "+", Base.add |> Value.ofFun |> Cell.cell
-            ]}
-
         let mainModule:GreenModule = GreenModule.empty "main"
-        do GreenModule.tryImport mainModule "+" libModule "+" |> ignore
+        do GreenModule.tryImport mainModule "+" Prelude.``module`` "+" |> ignore
 
-        member this.Eval expr : Value =
+        member __.Eval expr : Value =
             match compile expr with
             | None -> failwith "Some error in compiler"
             | Some block -> eval mainModule block
