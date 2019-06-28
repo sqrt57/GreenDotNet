@@ -112,15 +112,15 @@ module Compile =
     let extractBytecode (block:CodeBlock<int,int>) : byte seq =
         let c = {
             new CodeBlock.Cata<int, int, byte seq> with
-                member __.cConst index _constant = seq [byte OpCode.Const1; byte index]
-                member __.cVarRef index _name = seq [byte OpCode.Var1; byte index]
+                member __.cConst index _constant = seq [Checked.byte OpCode.Const1; Checked.byte index]
+                member __.cVarRef index _name = seq [Checked.byte OpCode.Var1; Checked.byte index]
                 member __.cCall func args =
                     seq {
                         yield! func
                         for arg in args do
                             yield! arg
-                        yield byte OpCode.Call1
-                        yield byte <| List.length args
+                        yield Checked.byte OpCode.Call1
+                        yield Checked.byte <| List.length args
                     } }
         CodeBlock.cata c block
 
