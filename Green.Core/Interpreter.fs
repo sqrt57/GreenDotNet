@@ -12,6 +12,7 @@ module Interpreter =
 
         let mainModule:GreenModule = GreenModule.empty "main"
         do GreenModule.tryImport mainModule "+" Prelude.``module`` "+" |> ignore
+        do GreenModule.tryImport mainModule "=" Prelude.``module`` "=" |> ignore
 
         member __.Eval expr : Value =
             match compile expr with

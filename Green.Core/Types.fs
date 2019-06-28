@@ -7,6 +7,7 @@ module Obj =
     [<StructuralEquality;StructuralComparison>]
     type Value =
         | Unit
+        | Bool of bool
         | Int of int64
         | U of UValue
 
@@ -30,6 +31,8 @@ module Obj =
         let empty = Unit
 
         let ofInt x = Int x
+
+        let ofBool x = Bool x
 
         let ofFun f = U <| Fun f
 

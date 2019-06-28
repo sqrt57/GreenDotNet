@@ -60,6 +60,7 @@ module Read =
             | (LeftBracket,info)::rest -> readListImpl contError subContEol (subContRightBr info) [] rest
             | (RightBracket,info)::rest -> contRightBr info (List.rev acc) rest
             | (Token.Number n,info)::rest -> cont {syntax=Constant (Value.ofInt n);info=info} rest
+            | (Token.Boolean b,info)::rest -> cont {syntax=Constant (Value.ofBool b);info=info} rest
             | (Token.Identifier s,info)::rest -> cont {syntax=Identifier s;info=info} rest
 
         let readList (tokens:(Token*Range) list) : SyntaxWithInfo<Range> list ReadResult =
@@ -75,6 +76,8 @@ module Read =
         match lexeme with
         | "(" -> LeftBracket
         | ")" -> RightBracket
+        | "#t" | "#true" -> Boolean true
+        | "#f" | "#false" -> Boolean false
         | _ when Int64.TryParse(lexeme, &number) -> Number number
         | _ -> Token.Identifier lexeme
 

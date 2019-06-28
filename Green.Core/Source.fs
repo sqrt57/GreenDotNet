@@ -40,6 +40,7 @@ module Source =
             | LeftBracket
             | RightBracket
             | Number of Int64
+            | Boolean of bool
             | Identifier of string
 
     module Parse =
