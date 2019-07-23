@@ -9,6 +9,8 @@ module Bytecode =
         | Const1 = 0uy
         | Var1 = 1uy
         | Call1 = 2uy
+        | Jump1 = 3uy
+        | JumpIfNot1 = 4uy
 
     type Block = private {
         bytecode : byte array
@@ -56,7 +58,18 @@ module Bytecode =
                 match stack.Pop() with
                 | Fun func ->
                     stack.Push <| func args
-                | _ -> raise (RuntimeException <| sprintf "Cannot execute as function")
+                | _ -> raise (RuntimeException <| sprintf "Function required")
+            | OpCode.Jump1 ->
+                let delta = bytecode.bytecode.[ip]
+                ip <- ip + 1 + int delta
+            | OpCode.JumpIfNot1 ->
+                match stack.Pop() with
+                | Bool true ->
+                    ip <- ip + 1
+                | Bool false ->
+                    let delta = bytecode.bytecode.[ip]
+                    ip <- ip + 1 + int delta
+                | _ -> raise (RuntimeException <| sprintf "Boolean required")
             | _ -> raise (RuntimeException(sprintf "eval: unknown bytecode %A" op))
 
         if stack.Count = 0 then
