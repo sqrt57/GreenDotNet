@@ -48,7 +48,8 @@ module Bytecode =
                 let variable = bytecode.variables.[int index]
                 match main.tryGetBinding variable with
                 | None -> raise (RuntimeException(sprintf "eval: Variable '%s' not found in globals" variable))
-                | Some cell -> stack.Push cell.value
+                | Some { bindingType=Value; cell=cell } -> stack.Push cell.value
+                | Some { bindingType=Syntax } -> raise (RuntimeException(sprintf "eval: Variable '%s' is bound to syntax" variable))
             | OpCode.Call1 ->
                 let argsCount = bytecode.bytecode.[ip]
                 ip <- ip + 1

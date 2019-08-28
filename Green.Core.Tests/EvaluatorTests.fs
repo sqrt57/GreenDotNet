@@ -26,7 +26,7 @@ let ``Eval variable``() =
     let main:Module = {
         name="main";
         bindings = Map.ofList [
-            "x", 5L |> Value.ofInt |> Cell.cell
+            "x", 5L |> Value.ofInt |> Cell.cell |> Binding.value
         ]
     }
     let bytecode = BlockCreate.toBlock {

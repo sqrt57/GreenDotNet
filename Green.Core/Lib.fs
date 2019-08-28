@@ -20,6 +20,6 @@ module Prelude =
     let ``module`` : Module = {
         name="lib"
         bindings = Map.ofList [
-            "+", add |> Value.ofFun |> Cell.cell
-            "=", equals |> Value.ofFun |> Cell.cell
+            "+", add |> Value.ofFun |> Cell.cell |> Binding.value
+            "=", equals |> Value.ofFun |> Cell.cell |> Binding.value
         ]}
