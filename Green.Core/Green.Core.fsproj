@@ -5,14 +5,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Util.fsi" />
     <Compile Include="Util.fs" />
+    <Compile Include="Type.fsi" />
     <Compile Include="Type.fs" />
+    <Compile Include="Module.fsi" />
     <Compile Include="Module.fs" />
+    <Compile Include="Bytecode.fsi" />
     <Compile Include="Bytecode.fs" />
+    <Compile Include="Source.fsi" />
     <Compile Include="Source.fs" />
+    <Compile Include="Read.fsi" />
     <Compile Include="Read.fs" />
+    <Compile Include="Compile.fsi" />
     <Compile Include="Compile.fs" />
+    <Compile Include="Lib.fsi" />
     <Compile Include="Lib.fs" />
+    <Compile Include="Interpreter.fsi" />
     <Compile Include="Interpreter.fs" />
     <None Include="Explore.fsx" />
   </ItemGroup>
