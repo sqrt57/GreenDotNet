@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
@@ -6,12 +6,13 @@
 
   <ItemGroup>
     <Compile Include="Util.fs" />
-    <Compile Include="Types.fs" />
-    <Compile Include="Lib.fs" />
+    <Compile Include="Type.fs" />
+    <Compile Include="Module.fs" />
     <Compile Include="Bytecode.fs" />
     <Compile Include="Source.fs" />
     <Compile Include="Read.fs" />
     <Compile Include="Compile.fs" />
+    <Compile Include="Lib.fs" />
     <Compile Include="Interpreter.fs" />
     <None Include="Explore.fsx" />
   </ItemGroup>
